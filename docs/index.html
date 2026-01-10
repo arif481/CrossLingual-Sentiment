@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cross-Lingual Sentiment Analysis for Low-Resource Languages using Multilingual Transformers">
+    <meta name="keywords" content="NLP, sentiment analysis, cross-lingual, Bengali, XLM-RoBERTa, machine learning">
+    <meta name="author" content="Cross-Lingual Sentiment Team">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Cross-Lingual Sentiment Analysis">
+    <meta property="og:description" content="Sentiment classification for English and Bengali using multilingual transformers">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://YOUR_USERNAME.github.io/crosslingual-sentiment/">
+    
+    <title>Cross-Lingual Sentiment Analysis</title>
+    
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #06b6d4;
+            --text-color: #1f2937;
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Navigation */
+        nav {
+            background: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav .container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: var(--primary-color);
+        }
+        
+        /* Main content */
+        main {
+            padding: 60px 0;
+        }
+        
+        section {
+            margin-bottom: 60px;
+        }
+        
+        section h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .card p {
+            color: #6b7280;
+        }
+        
+        /* Demo Section */
+        .demo-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .demo-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .demo-fallback {
+            text-align: center;
+            padding: 40px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        
+        .demo-fallback img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #4338ca;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background: #0891b2;
+        }
+        
+        /* Results Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--text-color);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+        
+        footer a {
+            color: var(--secondary-color);
+        }
+        
+        /* Code block */
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        code {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            nav .container {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            
+            .demo-iframe {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🌐 Cross-Lingual Sentiment Analysis</h1>
+            <p>Binary sentiment classification for English and Bengali using multilingual transformers (XLM-RoBERTa)</p>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <a href="#about">About</a>
+            <a href="#demo">Demo</a>
+            <a href="#results">Results</a>
+            <a href="#usage">Usage</a>
+            <a href="https://github.com/YOUR_USERNAME/crosslingual-sentiment" target="_blank">GitHub</a>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="container">
+            <!-- About Section -->
+            <section id="about">
+                <h2>About This Project</h2>
+                <p>This project demonstrates cross-lingual sentiment analysis using multilingual transformer models. It supports sentiment classification in both English (high-resource) and Bengali (low-resource) languages.</p>
+                
+                <div class="cards">
+                    <div class="card">
+                        <h3>🎯 Zero-Shot Transfer</h3>
+                        <p>Train on English data and evaluate on Bengali without any Bengali training examples.</p>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Low-Resource Learning</h3>
+                        <p>Fine-tune on limited Bengali data to establish a low-resource baseline.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🔗 Combined Training</h3>
+                        <p>Train on both languages for optimal multilingual performance.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Demo Section -->
+            <section id="demo">
+                <h2>Live Demo</h2>
+                <div class="demo-container">
+                    <!-- 
+                    INSTRUCTIONS: Replace YOUR_USERNAME with your Hugging Face username.
+                    If embedding doesn't work, uncomment the fallback section below.
+                    -->
+                    <iframe 
+                        src="https://YOUR_USERNAME-crosslingual-demo.hf.space"
+                        class="demo-iframe"
+                        title="Cross-Lingual Sentiment Analysis Demo"
+                        loading="lazy"
+                        allow="accelerometer; camera; encrypted-media; gyroscope;"
+                    ></iframe>
+                    
+                    <!-- Fallback if iframe embedding is blocked -->
+                    <!--
+                    <div class="demo-fallback">
+                        <h3>Interactive Demo</h3>
+                        <p>The demo is available on Hugging Face Spaces.</p>
+                        <img src="demo-screenshots/demo-screenshot.png" alt="Demo Screenshot">
+                        <br>
+                        <a href="https://huggingface.co/spaces/YOUR_USERNAME/crosslingual-demo" class="btn" target="_blank">
+                            Open Demo →
+                        </a>
+                    </div>
+                    -->
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="https://huggingface.co/spaces/YOUR_USERNAME/crosslingual-demo" class="btn" target="_blank">
+                        Open in Hugging Face Spaces
+                    </a>
+                    <a href="https://huggingface.co/YOUR_USERNAME/crosslingual-sentiment-model" class="btn btn-secondary" target="_blank">
+                        View Model on HF Hub
+                    </a>
+                </div>
+            </section>
+            
+            <!-- Results Section -->
+            <section id="results">
+                <h2>Experiment Results</h2>
+                <p>Performance comparison across different training strategies:</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Experiment</th>
+                            <th>Train Lang</th>
+                            <th>Eval Lang</th>
+                            <th>Accuracy</th>
+                            <th>Macro-F1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Zero-Shot</td>
+                            <td>English</td>
+                            <td>Bengali</td>
+                            <td>~72%</td>
+                            <td>~70%</td>
+                        </tr>
+                        <tr>
+                            <td>Low-Resource</td>
+                            <td>Bengali</td>
+                            <td>Bengali</td>
+                            <td>~78%</td>
+                            <td>~77%</td>
+                        </tr>
+                        <tr>
+                            <td>Combined</td>
+                            <td>EN + BN</td>
+                            <td>EN + BN</td>
+                            <td>~82%</td>
+                            <td>~81%</td>
+                        </tr>
+                        <tr>
+                            <td>Baseline (TF-IDF)</td>
+                            <td>English</td>
+                            <td>Bengali</td>
+                            <td>~55%</td>
+                            <td>~52%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <p style="margin-top: 15px; color: #6b7280; font-size: 0.9rem;">
+                    *Results are approximate and depend on dataset size and hyperparameters. Run experiments for exact numbers.
+                </p>
+            </section>
+            
+            <!-- Usage Section -->
+            <section id="usage">
+                <h2>Quick Start</h2>
+                
+                <h3>Using the Model</h3>
+                <pre><code>from transformers import pipeline
+
+# Load the model
+classifier = pipeline(
+    "sentiment-analysis",
+    model="YOUR_USERNAME/crosslingual-sentiment-model"
+)
+
+# English
+result = classifier("This movie is fantastic!")
+print(result)  # [{'label': 'positive', 'score': 0.98}]
+
+# Bengali
+result = classifier("এই সিনেমাটি অসাধারণ!")
+print(result)  # [{'label': 'positive', 'score': 0.95}]</code></pre>
+                
+                <h3>Running Locally</h3>
+                <pre><code># Clone the repository
+git clone https://github.com/YOUR_USERNAME/crosslingual-sentiment.git
+cd crosslingual-sentiment
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Prepare data
+./scripts/run_preprocess.sh --demo
+
+# Train model
+./scripts/run_train.sh --mode combined --demo
+
+# Run Streamlit app
+streamlit run app/streamlit_app.py</code></pre>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://github.com/YOUR_USERNAME/crosslingual-sentiment" class="btn" target="_blank">
+                        📖 Full Documentation
+                    </a>
+                    <a href="https://colab.research.google.com/github/YOUR_USERNAME/crosslingual-sentiment/blob/main/notebooks/colab_run.ipynb" class="btn btn-secondary" target="_blank">
+                        🚀 Open in Colab
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>
+                Cross-Lingual Sentiment Analysis Project<br>
+                <a href="https://github.com/YOUR_USERNAME/crosslingual-sentiment">GitHub</a> |
+                <a href="https://huggingface.co/YOUR_USERNAME/crosslingual-sentiment-model">Hugging Face</a>
+            </p>
+            <p style="margin-top: 15px; opacity: 0.7;">
+                Built with ❤️ using Transformers, PyTorch, and Streamlit
+            </p>
+        </div>
+    </footer>
+    
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // Check if iframe loaded successfully
+        const iframe = document.querySelector('.demo-iframe');
+        if (iframe) {
+            iframe.onerror = function() {
+                // Show fallback if iframe fails
+                console.log('Demo iframe failed to load');
+            };
+        }
+    </script>
+</body>
+</html>

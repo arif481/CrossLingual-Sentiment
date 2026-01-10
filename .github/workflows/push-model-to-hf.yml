@@ -1,0 +1,125 @@
+# Push Model to Hugging Face Hub
+# ================================
+# Manual workflow to push trained models to HF Hub
+
+name: Push Model to HF Hub
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Experiment mode'
+        required: true
+        default: 'combined'
+        type: choice
+        options:
+          - zero_shot
+          - low_resource
+          - combined
+      repo_name:
+        description: 'HF repository name (without username)'
+        required: true
+        default: 'crosslingual-sentiment-model'
+        type: string
+      private:
+        description: 'Make repository private'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  push-model:
+    name: Push Model to Hugging Face
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub transformers pyyaml
+      
+      - name: Check for checkpoint
+        id: check_checkpoint
+        run: |
+          CHECKPOINT_PATH="experiments/${{ github.event.inputs.mode }}/checkpoint-best"
+          if [ -d "$CHECKPOINT_PATH" ]; then
+            echo "checkpoint_exists=true" >> $GITHUB_OUTPUT
+            echo "✓ Checkpoint found at: $CHECKPOINT_PATH"
+          else
+            echo "checkpoint_exists=false" >> $GITHUB_OUTPUT
+            echo "✗ Checkpoint not found at: $CHECKPOINT_PATH"
+            echo "  Available experiments:"
+            ls -la experiments/ || echo "  No experiments directory"
+          fi
+      
+      - name: Validate HF Token
+        if: steps.check_checkpoint.outputs.checkpoint_exists == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "Error: HF_TOKEN secret not set"
+            echo "Please add your Hugging Face token to repository secrets:"
+            echo "  1. Go to Settings -> Secrets and variables -> Actions"
+            echo "  2. Add a new secret named HF_TOKEN"
+            echo "  3. Get your token from https://huggingface.co/settings/tokens"
+            exit 1
+          fi
+          echo "✓ HF_TOKEN is set"
+      
+      - name: Push model to Hub
+        if: steps.check_checkpoint.outputs.checkpoint_exists == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+        run: |
+          CHECKPOINT_PATH="experiments/${{ github.event.inputs.mode }}/checkpoint-best"
+          PRIVATE_FLAG=""
+          
+          if [ "${{ github.event.inputs.private }}" = "true" ]; then
+            PRIVATE_FLAG="--private"
+          fi
+          
+          python -m src.push_to_hf \
+            --checkpoint "$CHECKPOINT_PATH" \
+            --repo-name "${{ github.event.inputs.repo_name }}" \
+            --mode "${{ github.event.inputs.mode }}" \
+            $PRIVATE_FLAG
+      
+      - name: Report failure
+        if: steps.check_checkpoint.outputs.checkpoint_exists == 'false'
+        run: |
+          echo "=========================================="
+          echo "FAILED: No checkpoint found"
+          echo "=========================================="
+          echo ""
+          echo "To create a checkpoint, first train a model:"
+          echo "  ./scripts/run_train.sh --mode ${{ github.event.inputs.mode }}"
+          echo ""
+          echo "Or download artifacts from a previous training run."
+          exit 1
+      
+      - name: Success message
+        if: steps.check_checkpoint.outputs.checkpoint_exists == 'true'
+        run: |
+          echo "=========================================="
+          echo "SUCCESS: Model pushed to Hugging Face Hub"
+          echo "=========================================="
+          echo ""
+          echo "Your model is now available at:"
+          echo "  https://huggingface.co/${{ secrets.HF_USERNAME || 'YOUR_USERNAME' }}/${{ github.event.inputs.repo_name }}"
+          echo ""
+          echo "To use the model:"
+          echo '  from transformers import pipeline'
+          echo '  classifier = pipeline("sentiment-analysis", model="YOUR_USERNAME/${{ github.event.inputs.repo_name }}")'
