@@ -237,7 +237,7 @@ def create_hf_dataset(
     csv_path: Union[str, Path],
     tokenizer,
     max_length: int = 128
-) -> "datasets.Dataset":
+):
     """
     Create a Hugging Face Dataset from CSV for use with Trainer.
     
