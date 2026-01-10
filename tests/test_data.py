@@ -111,8 +111,8 @@ class TestSplitAndSave:
     def test_files_created(self):
         """Test that CSV files are created."""
         df = pd.DataFrame({
-            "text": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
-            "label": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+            "text": [f"text_{i}" for i in range(100)],
+            "label": [i % 2 for i in range(100)]  # 50-50 balanced
         })
         
         with tempfile.TemporaryDirectory() as tmpdir:
