@@ -207,7 +207,7 @@ def train(
         warmup_ratio=train_config["warmup_ratio"],
         gradient_accumulation_steps=train_config["gradient_accumulation_steps"],
         fp16=train_config["fp16"] and torch.cuda.is_available(),
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=train_config["eval_steps"],
         save_strategy="steps",
         save_steps=train_config["save_steps"],
@@ -217,7 +217,7 @@ def train(
         greater_is_better=train_config["greater_is_better"],
         logging_dir=str(output_dir / "logs"),
         logging_steps=train_config["logging_steps"],
-        report_to=["tensorboard"],
+        report_to=[],
         seed=seed,
         dataloader_num_workers=2,
         remove_unused_columns=True

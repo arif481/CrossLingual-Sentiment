@@ -98,15 +98,25 @@ def create_model_card(
     """
     metrics_str = ""
     if metrics:
+        acc = metrics.get('accuracy', 'N/A')
+        f1 = metrics.get('macro_f1', metrics.get('f1', 'N/A'))
+        prec = metrics.get('macro_precision', metrics.get('precision', 'N/A'))
+        rec = metrics.get('macro_recall', metrics.get('recall', 'N/A'))
+        
+        acc_str = f"{acc:.4f}" if isinstance(acc, (int, float)) else str(acc)
+        f1_str = f"{f1:.4f}" if isinstance(f1, (int, float)) else str(f1)
+        prec_str = f"{prec:.4f}" if isinstance(prec, (int, float)) else str(prec)
+        rec_str = f"{rec:.4f}" if isinstance(rec, (int, float)) else str(rec)
+        
         metrics_str = f"""
 ## Metrics
 
 | Metric | Value |
 |--------|-------|
-| Accuracy | {metrics.get('accuracy', 'N/A'):.4f if isinstance(metrics.get('accuracy'), float) else 'N/A'} |
-| Macro F1 | {metrics.get('macro_f1', 'N/A'):.4f if isinstance(metrics.get('macro_f1'), float) else 'N/A'} |
-| Precision | {metrics.get('macro_precision', 'N/A'):.4f if isinstance(metrics.get('macro_precision'), float) else 'N/A'} |
-| Recall | {metrics.get('macro_recall', 'N/A'):.4f if isinstance(metrics.get('macro_recall'), float) else 'N/A'} |
+| Accuracy | {acc_str} |
+| Macro F1 | {f1_str} |
+| Precision | {prec_str} |
+| Recall | {rec_str} |
 """
     
     lang_str = ", ".join(languages)
