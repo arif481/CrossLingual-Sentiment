@@ -118,8 +118,8 @@ jobs:
           echo "=========================================="
           echo ""
           echo "Your model is now available at:"
-          echo "  https://huggingface.co/${{ secrets.HF_USERNAME || 'YOUR_USERNAME' }}/${{ github.event.inputs.repo_name }}"
+          echo "  https://huggingface.co/${{ secrets.HF_USERNAME || 'arif481' }}/${{ github.event.inputs.repo_name }}"
           echo ""
           echo "To use the model:"
           echo '  from transformers import pipeline'
-          echo '  classifier = pipeline("sentiment-analysis", model="YOUR_USERNAME/${{ github.event.inputs.repo_name }}")'
+          echo '  classifier = pipeline("sentiment-analysis", model="arif481/${{ github.event.inputs.repo_name }}")'
