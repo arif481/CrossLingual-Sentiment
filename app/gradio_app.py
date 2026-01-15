@@ -16,7 +16,8 @@ import numpy as np
 
 # Model configuration
 MODEL_NAME = "arif481/crosslingual-sentiment-model"
-LABELS = ["Negative", "Neutral", "Positive"]
+# Binary classification: model was trained with 2 classes
+LABELS = ["Negative", "Positive"]
 
 # Load model and tokenizer
 print("Loading model...")
@@ -24,16 +25,23 @@ try:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
     model.eval()
-    print("Model loaded successfully!")
+    num_labels = model.config.num_labels
+    print(f"Model loaded successfully! num_labels={num_labels}")
+    # Dynamically set labels based on model config
+    if num_labels == 2:
+        LABELS = ["Negative", "Positive"]
+    elif num_labels == 3:
+        LABELS = ["Negative", "Neutral", "Positive"]
 except Exception as e:
     print(f"Error loading model: {e}")
     # Fallback to base model for demo
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     model = AutoModelForSequenceClassification.from_pretrained(
         "xlm-roberta-base", 
-        num_labels=3
+        num_labels=2
     )
     model.eval()
+    LABELS = ["Negative", "Positive"]
     print("Using base model as fallback")
 
 def predict_sentiment(text: str) -> dict:
@@ -63,19 +71,20 @@ def predict_sentiment(text: str) -> dict:
         outputs = model(**inputs)
         probs = torch.softmax(outputs.logits, dim=-1)[0].numpy()
     
-    # Create output dictionary
-    result = {LABELS[i]: float(probs[i]) for i in range(len(LABELS))}
+    # Create output dictionary - use actual number of outputs from model
+    num_outputs = len(probs)
+    result = {LABELS[i]: float(probs[i]) for i in range(min(num_outputs, len(LABELS)))}
     
     return result
 
-# Example texts
+# Example texts (binary: positive and negative examples)
 EXAMPLES = [
     ["This product is amazing! I love it so much."],
     ["The service was terrible and I'm very disappointed."],
-    ["It's okay, nothing special but not bad either."],
+    ["I had a wonderful experience, highly recommended!"],
     ["এই পণ্যটি অসাধারণ! আমি এটা খুব পছন্দ করি।"],  # Bengali: This product is amazing
     ["সেবাটি খুবই খারাপ ছিল এবং আমি খুব হতাশ।"],  # Bengali: The service was terrible
-    ["এটা ঠিক আছে, বিশেষ কিছু না তবে খারাপও না।"],  # Bengali: It's okay
+    ["চমৎকার অভিজ্ঞতা, সবাইকে সুপারিশ করব!"],  # Bengali: Excellent experience, recommend to all
 ]
 
 # Create Gradio interface
@@ -88,7 +97,7 @@ demo = gr.Interface(
     ),
     outputs=gr.Label(
         label="Sentiment Prediction",
-        num_top_classes=3
+        num_top_classes=2
     ),
     title="🌍 Cross-Lingual Sentiment Analysis",
     description="""
@@ -104,7 +113,6 @@ demo = gr.Interface(
     ### How it works
     Enter any text and the model will predict whether the sentiment is:
     - 😊 **Positive** - Happy, satisfied, enthusiastic
-    - 😐 **Neutral** - Objective, factual, neither positive nor negative  
     - 😞 **Negative** - Unhappy, disappointed, frustrated
     
     ---
@@ -112,7 +120,8 @@ demo = gr.Interface(
     **GitHub:** [arif481/CrossLingual-Sentiment](https://github.com/arif481/CrossLingual-Sentiment)
     """,
     examples=EXAMPLES,
-    flagging_mode="never"
+    flagging_mode="never",
+    cache_examples=False  # Disable example caching to avoid startup errors
 )
 
 if __name__ == "__main__":
