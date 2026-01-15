@@ -7,9 +7,9 @@
     "step": 5
   },
   {
-    "train_runtime": 209.5776,
-    "train_samples_per_second": 0.382,
-    "train_steps_per_second": 0.024,
+    "train_runtime": 164.9978,
+    "train_samples_per_second": 0.485,
+    "train_steps_per_second": 0.03,
     "total_flos": 5262221107200.0,
     "train_loss": 0.7106887817382812,
     "epoch": 1.0,
@@ -21,9 +21,9 @@
     "test_precision": 0.3,
     "test_recall": 0.5,
     "test_f1": 0.375,
-    "test_runtime": 2.2792,
-    "test_samples_per_second": 4.387,
-    "test_steps_per_second": 0.439,
+    "test_runtime": 2.479,
+    "test_samples_per_second": 4.034,
+    "test_steps_per_second": 0.403,
     "epoch": 1.0,
     "step": 5
   }
