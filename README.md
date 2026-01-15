@@ -1,9 +1,9 @@
 # Cross-Lingual Sentiment Analysis for Low-Resource Languages
 
-[![CI](https://github.com/YOUR_USERNAME/crosslingual-sentiment/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/crosslingual-sentiment/actions/workflows/ci.yml)
+[![CI](https://github.com/arif481/crosslingual-sentiment/actions/workflows/ci.yml/badge.svg)](https://github.com/arif481/crosslingual-sentiment/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-orange)](https://huggingface.co/YOUR_USERNAME/crosslingual-sentiment-model)
+[![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-orange)](https://huggingface.co/arif481/crosslingual-sentiment-model)
 
 A research-ready framework for cross-lingual sentiment analysis using multilingual transformers (XLM-RoBERTa). Supports English (high-resource) and Bengali (low-resource) with three experimental configurations: zero-shot transfer, low-resource fine-tuning, and combined multilingual training.
 
@@ -69,7 +69,7 @@ crosslingual-sentiment/
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/crosslingual-sentiment.git
+git clone https://github.com/arif481/crosslingual-sentiment.git
 cd crosslingual-sentiment
 
 # Create virtual environment
@@ -89,7 +89,7 @@ from transformers import pipeline
 # Load model from Hugging Face Hub
 classifier = pipeline(
     "sentiment-analysis",
-    model="YOUR_USERNAME/crosslingual-sentiment-model"
+    model="arif481/crosslingual-sentiment-model"
 )
 
 # English
@@ -148,7 +148,7 @@ python -m src.evaluate \
 
 ```bash
 # Set your token
-export HF_TOKEN=your_huggingface_token
+export HF_TOKEN=your_huggingface_token  # Get from https://huggingface.co/settings/tokens
 
 # Push model
 ./scripts/push_model.sh --mode combined
@@ -201,7 +201,7 @@ streamlit run app/streamlit_app.py
 
 1. Go to repository Settings → Pages
 2. Source: Deploy from branch `main`, folder `/docs`
-3. Your site will be at `https://YOUR_USERNAME.github.io/crosslingual-sentiment/`
+3. Your site will be at `https://arif481.github.io/crosslingual-sentiment/`
 
 ## 🔧 Configuration
 
@@ -272,11 +272,11 @@ If you use this work, please cite:
 
 ```bibtex
 @misc{crosslingual-sentiment,
-  author = {Your Name},
+  author = {Md Arifuzzaman},
   title = {Cross-Lingual Sentiment Analysis for Low-Resource Languages},
   year = {2024},
   publisher = {GitHub},
-  url = {https://github.com/YOUR_USERNAME/crosslingual-sentiment}
+  url = {https://github.com/arif481/crosslingual-sentiment}
 }
 ```
 
@@ -289,7 +289,7 @@ If you use this work, please cite:
 ---
 
 **Links:**
-- [GitHub Repository](https://github.com/YOUR_USERNAME/crosslingual-sentiment)
-- [Hugging Face Model](https://huggingface.co/YOUR_USERNAME/crosslingual-sentiment-model)
-- [Live Demo](https://huggingface.co/spaces/YOUR_USERNAME/crosslingual-demo)
-- [Project Page](https://YOUR_USERNAME.github.io/crosslingual-sentiment/)
+- [GitHub Repository](https://github.com/arif481/crosslingual-sentiment)
+- [Hugging Face Model](https://huggingface.co/arif481/crosslingual-sentiment-model)
+- [Live Demo](https://huggingface.co/spaces/arif481/crosslingual-demo)
+- [Project Page](https://arif481.github.io/crosslingual-sentiment/)

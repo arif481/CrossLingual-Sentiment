@@ -1,6 +1,6 @@
 ---
 title: "Cross-Lingual Sentiment Analysis for Low-Resource Languages using Multilingual Transformers"
-author: "Your Name"
+author: "Md Arifuzzaman"
 date: "2024"
 abstract: |
   Cross-lingual transfer learning has emerged as a promising approach for extending NLP capabilities to low-resource languages without requiring extensive annotated data in the target language. This paper presents a comprehensive study on cross-lingual sentiment analysis, leveraging multilingual transformer models (specifically XLM-RoBERTa) to transfer sentiment classification knowledge from English (high-resource) to Bengali (low-resource). We systematically evaluate three experimental configurations: zero-shot transfer, low-resource fine-tuning, and combined multilingual training. Our results demonstrate that combined training achieves the best overall performance (~82% accuracy), while zero-shot transfer provides a viable baseline (~72% accuracy) without any target language training data. We provide detailed error analysis, ablation studies, and practical recommendations for practitioners working with low-resource languages.

@@ -27,7 +27,7 @@ st.set_page_config(
 DEFAULT_MODEL = "xlm-roberta-base"  # Fallback
 HF_MODEL_ID = os.environ.get(
     "HF_MODEL_ID", 
-    "YOUR_USERNAME/crosslingual-sentiment-model"  # Replace with your model
+    "arif481/crosslingual-sentiment-model"  # Your model on HF Hub
 )
 LOCAL_MODEL_PATH = "models/demo-checkpoint"
 
@@ -186,7 +186,7 @@ def main():
         - Zero-shot cross-lingual transfer
         - Support for English and Bengali
         
-        [📖 View Code](https://github.com/YOUR_USERNAME/crosslingual-sentiment)
+        [📖 View Code](https://github.com/arif481/crosslingual-sentiment)
         """
     )
     
@@ -338,8 +338,8 @@ def main():
         """
         <div style="text-align: center; color: gray; font-size: 12px;">
         Built with ❤️ using Streamlit and Hugging Face Transformers<br>
-        <a href="https://github.com/YOUR_USERNAME/crosslingual-sentiment">GitHub</a> | 
-        <a href="https://huggingface.co/YOUR_USERNAME/crosslingual-sentiment-model">Model</a>
+        <a href="https://github.com/arif481/crosslingual-sentiment">GitHub</a> | 
+        <a href="https://huggingface.co/arif481/crosslingual-sentiment-model">Model</a>
         </div>
         """,
         unsafe_allow_html=True

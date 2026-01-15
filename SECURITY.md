@@ -14,7 +14,7 @@ If you discover a security vulnerability within this project, please report it r
 ### How to Report
 
 1. **Do NOT** create a public GitHub issue for security vulnerabilities
-2. Email your findings to: [your-email@example.com]
+2. Email your findings to: mdarifuzzaman481@gmail.com
 3. Include as much information as possible:
    - Description of the vulnerability
    - Steps to reproduce
@@ -113,7 +113,6 @@ Security updates will be released as:
 ## Contact
 
 For security-related inquiries:
-- Email: [your-email@example.com]
-- GPG Key: [if available]
+- Email: mdarifuzzaman481@gmail.com
 
 Thank you for helping keep this project secure!
