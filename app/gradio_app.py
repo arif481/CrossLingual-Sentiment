@@ -112,8 +112,7 @@ demo = gr.Interface(
     **GitHub:** [arif481/CrossLingual-Sentiment](https://github.com/arif481/CrossLingual-Sentiment)
     """,
     examples=EXAMPLES,
-    theme=gr.themes.Soft(),
-    allow_flagging="never"
+    flagging_mode="never"
 )
 
 if __name__ == "__main__":
