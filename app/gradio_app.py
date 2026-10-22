@@ -3,7 +3,8 @@ Gradio Demo: Cross-Lingual Sentiment Analysis
 ==============================================
 
 Interactive demo for cross-lingual sentiment analysis supporting
-English and Bengali languages.
+English and Bengali languages. Deployed as the Hugging Face Space
+arif481/crosslingual-demo by `python -m src.push_to_hf --space crosslingual-demo`.
 
 Author: Md Arifuzzaman
 GitHub: https://github.com/arif481
@@ -12,13 +13,12 @@ GitHub: https://github.com/arif481
 import gradio as gr
 from transformers import pipeline
 
-# Use our trained model
 MODEL_NAME = "arif481/crosslingual-sentiment-model"
 
 print("Loading model...")
 try:
     classifier = pipeline(
-        "sentiment-analysis",
+        "text-classification",
         model=MODEL_NAME,
         top_k=None
     )
@@ -30,30 +30,20 @@ except Exception as e:
 def predict_sentiment(text: str) -> dict:
     """Predict sentiment for input text."""
     if not text or not text.strip():
-        return {"Positive": 0.5, "Negative": 0.5}
-    
+        return {}
+
     if classifier is None:
         return {"Error - Model not loaded": 1.0}
-    
+
     try:
-        results = classifier(text[:512])
-        
+        results = classifier(text, truncation=True)
+
         if results and isinstance(results[0], list):
             results = results[0]
-        
-        output = {}
-        for item in results:
-            label = item['label']
-            # Map LABEL_0 -> Negative, LABEL_1 -> Positive
-            if label == 'LABEL_0':
-                output['Negative'] = item['score']
-            elif label == 'LABEL_1':
-                output['Positive'] = item['score']
-            else:
-                output[label] = item['score']
-        
-        return output
-        
+
+        # The model's labels are "negative" and "positive"
+        return {item["label"].capitalize(): item["score"] for item in results}
+
     except Exception as e:
         print(f"Error: {e}")
         return {"Prediction Error": 1.0}
@@ -76,22 +66,13 @@ demo = gr.Interface(
         lines=3
     ),
     outputs=gr.Label(label="Sentiment", num_top_classes=2),
-    title="🌍 Cross-Lingual Sentiment Analysis",
+    title="Cross-lingual sentiment analysis",
     description="""
-## Analyze sentiment in English and Bengali text
+XLM-RoBERTa base fine-tuned by Md Arifuzzaman on English movie-review sentences (SST-2) and Bengali social media comments (SentNoB).
+Test macro-F1: 92.0 on English, 87.9 on Bengali. There are only two labels, so neutral text still gets one of them.
 
-This model is **XLM-RoBERTa** fine-tuned by **Md Arifuzzaman** on multilingual sentiment data.
-
-**Training:** 4,140 samples (English + Bengali), 1 epoch  
-**Validation Accuracy:** 100%
-
-### Supported Languages
-- 🇬🇧 **English**
-- 🇧🇩 **Bengali (বাংলা)**
-
----
-**Model:** [arif481/crosslingual-sentiment-model](https://huggingface.co/arif481/crosslingual-sentiment-model)  
-**GitHub:** [arif481/CrossLingual-Sentiment](https://github.com/arif481/CrossLingual-Sentiment)
+**Model:** [arif481/crosslingual-sentiment-model](https://huggingface.co/arif481/crosslingual-sentiment-model) ·
+**Code and experiments:** [arif481/CrossLingual-Sentiment](https://github.com/arif481/CrossLingual-Sentiment)
 """,
     examples=EXAMPLES,
     flagging_mode="never",

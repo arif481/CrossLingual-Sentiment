@@ -2,128 +2,113 @@
 Push to Hugging Face Hub Module
 ===============================
 
-Upload trained models to Hugging Face Hub.
+Upload a trained model, with a model card built from its metrics.json,
+and optionally the Gradio demo Space.
 """
 
 import os
 import argparse
 import logging
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict
 
-from huggingface_hub import (
-    HfApi,
-    create_repo,
-    upload_folder,
-    Repository
-)
+from huggingface_hub import CommitOperationAdd, HfApi, create_repo, get_token
 
-from .utils import load_config, load_json, setup_logging
+from .utils import get_project_root, load_config, load_json, setup_logging
 
 logger = logging.getLogger(__name__)
+
+GITHUB_URL = "https://github.com/arif481/CrossLingual-Sentiment"
+
+TRAINING_DATA = {
+    "en": "SST-2 movie-review sentences in English",
+    "bn": "SentNoB social media comments in Bengali"
+}
+
+TEST_SETS = {
+    "en": "English: SST-2 validation split",
+    "bn": "Bengali: SentNoB test split, neutral removed"
+}
+
+# Files the Trainer leaves next to the weights that a model repo doesn't need
+IGNORE_PATTERNS = ["training_args.bin", "checkpoint-*", "*.pt", "*.pth"]
 
 
 def get_hf_token() -> str:
     """
-    Get Hugging Face token from environment.
-    
+    Get Hugging Face token from the environment or the local login.
+
     Returns:
         HF token string
-        
+
     Raises:
         ValueError if token not found
     """
-    token = os.environ.get("HF_TOKEN")
-    
-    if not token:
-        # Try alternative env var names
-        token = os.environ.get("HUGGINGFACE_TOKEN")
-    
-    if not token:
-        # Try huggingface-cli token
-        try:
-            from huggingface_hub import HfFolder
-            token = HfFolder.get_token()
-        except Exception:
-            pass
-    
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN") or get_token()
+
     if not token:
         raise ValueError(
             "Hugging Face token not found. Set HF_TOKEN environment variable "
-            "or login with `huggingface-cli login`"
+            "or login with `hf auth login`"
         )
-    
+
     return token
 
 
 def get_hf_username(token: str) -> str:
     """
     Get Hugging Face username from token.
-    
+
     Args:
         token: HF token
-        
+
     Returns:
         Username string
     """
     # First check environment
     username = os.environ.get("HF_USERNAME")
-    
+
     if not username:
         # Get from API
         api = HfApi(token=token)
         user_info = api.whoami()
         username = user_info["name"]
-    
+
     return username
 
 
-def create_model_card(
-    model_name: str,
-    languages: list,
-    metrics: Optional[Dict] = None,
-    mode: str = "combined"
-) -> str:
+def create_model_card(model_id: str, metrics: Dict, max_length: int = 128) -> str:
     """
-    Create a model card README.
-    
+    Create a model card README from a metrics.json written by src.train.
+
     Args:
-        model_name: Model name
-        languages: List of languages
-        metrics: Optional evaluation metrics
-        mode: Training mode
-        
+        model_id: Hub id of the model, e.g. user/name
+        metrics: Contents of the run's metrics.json
+        max_length: Maximum sequence length used in training
+
     Returns:
         Model card string
     """
-    metrics_str = ""
-    if metrics:
-        acc = metrics.get('accuracy', 'N/A')
-        f1 = metrics.get('macro_f1', metrics.get('f1', 'N/A'))
-        prec = metrics.get('macro_precision', metrics.get('precision', 'N/A'))
-        rec = metrics.get('macro_recall', metrics.get('recall', 'N/A'))
-        
-        acc_str = f"{acc:.4f}" if isinstance(acc, (int, float)) else str(acc)
-        f1_str = f"{f1:.4f}" if isinstance(f1, (int, float)) else str(f1)
-        prec_str = f"{prec:.4f}" if isinstance(prec, (int, float)) else str(prec)
-        rec_str = f"{rec:.4f}" if isinstance(rec, (int, float)) else str(rec)
-        
-        metrics_str = f"""
-## Metrics
+    hp = metrics["hyperparameters"]
+    versions = metrics["versions"]
+    train_data = " and ".join(TRAINING_DATA[lang] for lang in metrics["train_languages"])
+    learning_rate = f"{hp['learning_rate']:g}".replace("e-0", "e-")
+    if metrics["epochs_trained"] < hp["epochs"]:
+        epochs = f"{metrics['epochs_trained']:g} epochs (early stopping, out of up to {hp['epochs']})"
+    else:
+        epochs = f"{hp['epochs']} epochs"
 
-| Metric | Value |
-|--------|-------|
-| Accuracy | {acc_str} |
-| Macro F1 | {f1_str} |
-| Precision | {prec_str} |
-| Recall | {rec_str} |
-"""
-    
-    lang_str = ", ".join(languages)
-    
-    card = f"""---
+    rows = "\n".join(
+        f"| {TEST_SETS[lang]} | {result['n']:,} | {100 * result['accuracy']:.1f} | {100 * result['f1']:.1f} |"
+        for lang, result in metrics["test"].items()
+    )
+
+    return f"""---
 language:
-{chr(10).join(f'  - {lang}' for lang in languages)}
+  - en
+  - bn
+license: mit
+base_model: {metrics["model"]}
 tags:
   - sentiment-analysis
   - cross-lingual
@@ -139,179 +124,135 @@ library_name: transformers
 pipeline_tag: text-classification
 ---
 
-# {model_name}
+# XLM-RoBERTa base for English and Bengali sentiment
 
-A cross-lingual sentiment analysis model fine-tuned on XLM-RoBERTa for binary sentiment classification (positive/negative) across {lang_str}.
+A negative/positive sentiment classifier. It is [{metrics["model"]}](https://huggingface.co/{metrics["model"]}) fine-tuned on {metrics["train_samples"]:,} examples: {train_data}. SentNoB's neutral comments were removed.
 
-## Model Description
+This is the `{metrics["mode"]}` model from [CrossLingual-Sentiment]({GITHUB_URL}). The project README compares it with zero-shot transfer from English, training on Bengali alone and a TF-IDF baseline.
 
-This model performs sentiment classification across multiple languages using transfer learning. It was trained using the **{mode}** strategy.
+## Results
 
-### Supported Languages
-- English (en)
-- Bengali (bn)
+One training run (seed {metrics["seed"]}):
 
-### Training Mode: {mode}
-{_get_mode_description(mode)}
+| Test set | Examples | Accuracy (%) | Macro-F1 (%) |
+|---|---|---|---|
+{rows}
 
 ## Usage
 
 ```python
 from transformers import pipeline
 
-classifier = pipeline("sentiment-analysis", model="{model_name}")
-
-# English
-result = classifier("This movie is absolutely fantastic!")
-print(result)  # [{{'label': 'positive', 'score': 0.99}}]
-
-# Bengali
-result = classifier("এই সিনেমাটি অসাধারণ ছিল!")
-print(result)  # [{{'label': 'positive', 'score': 0.95}}]
+classifier = pipeline("text-classification", model="{model_id}")
+classifier(["The service was terrible and I'm very disappointed.", "এই পণ্যটি অসাধারণ! আমি এটা খুব পছন্দ করি।"])
 ```
+
+The labels are `negative` and `positive`.
 
 ## Training
 
-```python
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
-model = AutoModelForSequenceClassification.from_pretrained("{model_name}")
-tokenizer = AutoTokenizer.from_pretrained("{model_name}")
-```
-
-{metrics_str}
+Trained for {epochs} at learning rate {learning_rate}, batch size {hp["batch_size"]}, weight decay {hp["weight_decay"]:g} and {100 * hp["warmup_ratio"]:.0f}% warmup, with inputs cut at {max_length} tokens. The checkpoint kept is the one with the best macro-F1 on the validation set ({metrics["val_samples"]:,} examples from the training languages). Training took {metrics["train_runtime_seconds"] / 60:.0f} minutes on a {metrics["device"]} with torch {versions["torch"]} and transformers {versions["transformers"]}.
 
 ## Limitations
 
-- Binary classification only (positive/negative)
-- May not perform well on neutral sentiment
-- Bengali performance may be lower than English due to limited training data
-
-## Citation
-
-If you use this model, please cite:
-
-```bibtex
-@misc{{crosslingual-sentiment,
-  author = {{Cross-Lingual Sentiment Team}},
-  title = {{Cross-Lingual Sentiment Analysis Model}},
-  year = {{2024}},
-  publisher = {{Hugging Face}},
-  url = {{https://huggingface.co/{model_name}}}
-}}
-```
+- Two classes only. Neutral text still gets one of the two labels.
+- The English data is movie reviews and the Bengali data is social media comments. Other kinds of text were not tested.
+- The scores come from one training run. With {metrics["test"]["bn"]["n"]:,} Bengali test comments, differences of a point or two between models are noise.
 
 ## License
 
-This model is released under the MIT License.
+The model and code are MIT licensed. SentNoB (Islam et al., Findings of EMNLP 2021) is licensed CC BY-ND 4.0; check its terms before reusing the data.
 """
-    
-    return card
-
-
-def _get_mode_description(mode: str) -> str:
-    """Get description for training mode."""
-    descriptions = {
-        "zero_shot": "Trained exclusively on English data and evaluated on Bengali without any Bengali training examples (zero-shot cross-lingual transfer).",
-        "low_resource": "Trained only on Bengali data to establish a low-resource baseline.",
-        "combined": "Trained on combined English and Bengali data for multilingual learning."
-    }
-    return descriptions.get(mode, "")
 
 
 def push_to_hub(
     checkpoint_path: str,
     repo_name: str,
-    mode: str = "combined",
-    languages: list = None,
-    metrics_path: Optional[str] = None,
+    metrics_path: str,
+    max_length: int = 128,
     private: bool = False,
     commit_message: str = "Upload model"
 ) -> str:
     """
-    Push model checkpoint to Hugging Face Hub.
-    
+    Push a saved model to the Hugging Face Hub, replacing what the repo held.
+
     Args:
-        checkpoint_path: Path to model checkpoint
+        checkpoint_path: Directory with the saved model and tokenizer
         repo_name: Repository name (without username)
-        mode: Training mode
-        languages: List of languages
-        metrics_path: Optional path to metrics JSON
+        metrics_path: The run's metrics.json, used for the model card
+        max_length: Maximum sequence length used in training
         private: Whether to make repo private
-        commit_message: Git commit message
-        
+        commit_message: Commit message on the Hub
+
     Returns:
         Repository URL
     """
     checkpoint_path = Path(checkpoint_path)
-    
+
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
-    
-    # Get token and username
+
     token = get_hf_token()
-    username = get_hf_username(token)
-    
-    full_repo_name = f"{username}/{repo_name}"
+    full_repo_name = f"{get_hf_username(token)}/{repo_name}"
     logger.info(f"Pushing to: {full_repo_name}")
-    
-    # Default languages
-    if languages is None:
-        languages = ["en", "bn"]
-    
-    # Load metrics if available
-    metrics = None
-    if metrics_path and Path(metrics_path).exists():
-        try:
-            metrics_data = load_json(metrics_path)
-            metrics = metrics_data.get("overall", metrics_data)
-        except Exception as e:
-            logger.warning(f"Could not load metrics: {e}")
-    
-    # Create model card
-    model_card = create_model_card(
-        model_name=full_repo_name,
-        languages=languages,
-        metrics=metrics,
-        mode=mode
-    )
-    
-    # Save model card to checkpoint
-    readme_path = checkpoint_path / "README.md"
-    with open(readme_path, "w", encoding="utf-8") as f:
-        f.write(model_card)
-    
+
+    model_card = create_model_card(full_repo_name, load_json(metrics_path), max_length)
+    (checkpoint_path / "README.md").write_text(model_card, encoding="utf-8")
     logger.info("Created model card")
-    
-    # Initialize API
-    api = HfApi(token=token)
-    
-    # Create repository
-    try:
-        create_repo(
-            repo_id=full_repo_name,
-            token=token,
-            private=private,
-            exist_ok=True
-        )
-        logger.info(f"Repository created/verified: {full_repo_name}")
-    except Exception as e:
-        logger.warning(f"Repository creation note: {e}")
-    
-    # Upload files
-    logger.info("Uploading model files...")
-    
-    api.upload_folder(
+
+    create_repo(repo_id=full_repo_name, token=token, private=private, exist_ok=True)
+
+    # delete_patterns="*" removes files from earlier uploads that this one
+    # doesn't replace; the Hub always keeps .gitattributes
+    HfApi(token=token).upload_folder(
         folder_path=str(checkpoint_path),
         repo_id=full_repo_name,
-        token=token,
+        ignore_patterns=IGNORE_PATTERNS,
+        delete_patterns="*",
         commit_message=commit_message
     )
-    
+
     repo_url = f"https://huggingface.co/{full_repo_name}"
     logger.info(f"Successfully pushed to: {repo_url}")
-    
+
     return repo_url
+
+
+def push_space(space_name: str, commit_message: str = "Update demo") -> str:
+    """
+    Upload the Gradio demo in app/ to a Hugging Face Space.
+
+    Args:
+        space_name: Space name (without username)
+        commit_message: Commit message on the Hub
+
+    Returns:
+        Space URL
+    """
+    token = get_hf_token()
+    space_id = f"{get_hf_username(token)}/{space_name}"
+    app_dir = get_project_root() / "app"
+
+    files = {
+        "app.py": app_dir / "gradio_app.py",
+        "requirements.txt": app_dir / "requirements_hf.txt",
+        "README.md": app_dir / "space_README.md"
+    }
+    operations = [
+        CommitOperationAdd(path_in_repo=name, path_or_fileobj=str(path))
+        for name, path in files.items()
+    ]
+    HfApi(token=token).create_commit(
+        repo_id=space_id,
+        repo_type="space",
+        operations=operations,
+        commit_message=commit_message
+    )
+
+    space_url = f"https://huggingface.co/spaces/{space_id}"
+    logger.info(f"Successfully pushed to: {space_url}")
+
+    return space_url
 
 
 def main():
@@ -322,8 +263,8 @@ def main():
     parser.add_argument(
         "--checkpoint",
         type=str,
-        required=True,
-        help="Path to model checkpoint directory"
+        default="models/combined-seed42/best",
+        help="Directory with the saved model"
     )
     parser.add_argument(
         "--repo-name",
@@ -336,20 +277,25 @@ def main():
         type=str,
         default="combined",
         choices=["zero_shot", "low_resource", "combined"],
-        help="Training mode for model card"
+        help="Training mode, used to find the metrics file"
     )
     parser.add_argument(
         "--metrics",
         type=str,
         default=None,
-        help="Path to metrics JSON file"
+        help="Path to the run's metrics.json (default: experiments/<mode>/seed42/metrics.json)"
     )
     parser.add_argument(
-        "--languages",
+        "--space",
         type=str,
-        nargs="+",
-        default=["en", "bn"],
-        help="Languages supported by the model"
+        default=None,
+        help="Also upload the Gradio demo to this Space (name without username)"
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/config.yaml",
+        help="Path to configuration file"
     )
     parser.add_argument(
         "--private",
@@ -362,61 +308,34 @@ def main():
         default="Upload cross-lingual sentiment model",
         help="Commit message"
     )
-    
+
     args = parser.parse_args()
-    
-    # Setup logging
+
     setup_logging()
-    
-    # Check for token
+
     try:
-        token = get_hf_token()
-        logger.info("HF token found")
+        get_hf_token()
     except ValueError as e:
         logger.error(str(e))
-        logger.error("\nTo set the token:")
-        logger.error("  export HF_TOKEN=your_token_here")
-        logger.error("  or: huggingface-cli login")
         return
-    
-    # Auto-detect metrics path
-    metrics_path = args.metrics
-    if not metrics_path:
-        # Try to find metrics in checkpoint parent
-        checkpoint_dir = Path(args.checkpoint).parent
-        potential_paths = [
-            checkpoint_dir / "eval_results.json",
-            checkpoint_dir / "metrics.json",
-            Path(args.checkpoint) / "metrics.json"
-        ]
-        for path in potential_paths:
-            if path.exists():
-                metrics_path = str(path)
-                logger.info(f"Found metrics at: {metrics_path}")
-                break
-    
-    # Push to hub
-    try:
-        repo_url = push_to_hub(
-            checkpoint_path=args.checkpoint,
-            repo_name=args.repo_name,
-            mode=args.mode,
-            languages=args.languages,
-            metrics_path=metrics_path,
-            private=args.private,
-            commit_message=args.message
-        )
-        
-        logger.info("\n" + "="*60)
-        logger.info("SUCCESS!")
-        logger.info("="*60)
-        logger.info(f"Model available at: {repo_url}")
-        logger.info("\nTo use the model:")
-        logger.info(f'  classifier = pipeline("sentiment-analysis", model="{repo_url.split("/")[-2]}/{repo_url.split("/")[-1]}")')
-        
-    except Exception as e:
-        logger.error(f"Failed to push model: {e}")
-        raise
+
+    metrics_path = args.metrics or f"experiments/{args.mode}/seed42/metrics.json"
+    if not Path(metrics_path).exists():
+        logger.error(f"Metrics not found: {metrics_path}")
+        return
+
+    config = load_config(args.config)
+    push_to_hub(
+        checkpoint_path=args.checkpoint,
+        repo_name=args.repo_name,
+        metrics_path=metrics_path,
+        max_length=config["model"]["max_length"],
+        private=args.private,
+        commit_message=args.message
+    )
+
+    if args.space:
+        push_space(args.space)
 
 
 if __name__ == "__main__":
