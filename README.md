@@ -105,7 +105,7 @@ classifier = pipeline("text-classification", model="arif481/crosslingual-sentime
 classifier("The film was a waste of two hours.")
 ```
 
-`python -m src.push_to_hf --space crosslingual-demo` uploads the model with a card built from its `metrics.json`, and the Gradio app in `app/` to the Space. It reads the token from `HF_TOKEN`.
+To upload them again, run `python -m src.push_to_hf --space crosslingual-demo` with your token in `HF_TOKEN`. It builds the model card from the run's `metrics.json` and pushes the Gradio app in `app/` to the Space.
 
 ## Layout
 
