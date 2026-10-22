@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'experiments/learning_curve/learning_curve.png'
       - '.github/workflows/docs-deploy.yml'
   workflow_dispatch:
 
@@ -35,6 +36,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Copy figures
+        run: cp experiments/learning_curve/learning_curve.png docs/
       
       - name: Setup Pages
         uses: actions/configure-pages@v4

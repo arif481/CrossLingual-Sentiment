@@ -3,427 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cross-Lingual Sentiment Analysis for Low-Resource Languages using Multilingual Transformers">
-    <meta name="keywords" content="NLP, sentiment analysis, cross-lingual, Bengali, XLM-RoBERTa, machine learning">
-    <meta name="author" content="Cross-Lingual Sentiment Team">
-    
-    <!-- Open Graph / Social Media -->
-    <meta property="og:title" content="Cross-Lingual Sentiment Analysis">
-    <meta property="og:description" content="Sentiment classification for English and Bengali using multilingual transformers">
+    <title>Cross-lingual sentiment analysis for Bengali</title>
+    <meta name="description" content="XLM-RoBERTa fine-tuned on English SST-2 and Bengali SentNoB: zero-shot transfer, Bengali-only and combined training, and a Bengali learning curve.">
+    <meta name="author" content="Md Arifuzzaman">
+    <meta property="og:title" content="Cross-lingual sentiment analysis for Bengali">
+    <meta property="og:description" content="100 Bengali labels beat zero-shot transfer from 63,981 English sentences: XLM-RoBERTa results on SST-2 and SentNoB.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://github.com/arif481/CrossLingual-Sentiment.git">
-    
-    <title>Cross-Lingual Sentiment Analysis</title>
-    
+    <meta property="og:url" content="https://arif481.github.io/CrossLingual-Sentiment/">
+    <meta property="og:image" content="https://arif481.github.io/CrossLingual-Sentiment/learning_curve.png">
+
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #06b6d4;
-            --text-color: #1f2937;
-            --bg-color: #f9fafb;
-            --card-bg: #ffffff;
+            --text: #1d1d1b;
+            --muted: #5c5b57;
+            --bg: #fbfbf8;
+            --rule: #dedcd5;
+            --link: #23479e;
+            --code-bg: #f0efea;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text: #e4e2dc;
+                --muted: #a29f97;
+                --bg: #171716;
+                --rule: #363531;
+                --link: #93b1f5;
+                --code-bg: #232321;
+            }
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", sans-serif;
+            font-size: 17px;
             line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        /* Header */
-        header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 60px 0;
-            text-align: center;
-        }
-        
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        
-        header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Navigation */
-        nav {
-            background: var(--card-bg);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 15px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        nav .container {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-        }
-        
-        nav a {
-            color: var(--text-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        nav a:hover {
-            color: var(--primary-color);
-        }
-        
-        /* Main content */
+
         main {
-            padding: 60px 0;
+            max-width: 46rem;
+            margin: 0 auto;
+            padding: 3.5rem 1rem 2rem;
         }
-        
-        section {
-            margin-bottom: 60px;
+
+        a {
+            color: var(--link);
         }
-        
-        section h2 {
-            font-size: 1.8rem;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
+
+        h1 {
+            font-size: 2rem;
+            line-height: 1.2;
+            margin: 0 0 0.5rem;
         }
-        
-        /* Cards */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+
+        h2 {
+            font-size: 1.3rem;
+            line-height: 1.3;
+            margin: 2.75rem 0 0.75rem;
         }
-        
-        .card {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+
+        .byline {
+            color: var(--muted);
+            margin: 0 0 2rem;
         }
-        
-        .card:hover {
-            transform: translateY(-5px);
+
+        .byline a {
+            margin-left: 0.9rem;
         }
-        
-        .card h3 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
+
+        .lead {
+            font-size: 1.1rem;
         }
-        
-        .card p {
-            color: #6b7280;
-        }
-        
-        /* Demo Section */
-        .demo-container {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .demo-iframe {
-            width: 100%;
-            height: 600px;
-            border: none;
-            border-radius: 8px;
-        }
-        
-        .demo-fallback {
-            text-align: center;
-            padding: 40px;
-            background: #f3f4f6;
-            border-radius: 8px;
-        }
-        
-        .demo-fallback img {
-            max-width: 100%;
-            border-radius: 8px;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        /* Buttons */
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background 0.3s;
-            margin: 5px;
-        }
-        
-        .btn:hover {
-            background: #4338ca;
-        }
-        
-        .btn-secondary {
-            background: var(--secondary-color);
-        }
-        
-        .btn-secondary:hover {
-            background: #0891b2;
-        }
-        
-        /* Results Table */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: var(--card-bg);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        th {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        tr:hover {
-            background: #f9fafb;
-        }
-        
-        /* Footer */
-        footer {
-            background: var(--text-color);
-            color: white;
-            padding: 40px 0;
-            text-align: center;
-        }
-        
-        footer a {
-            color: var(--secondary-color);
-        }
-        
-        /* Code block */
-        pre {
-            background: #1f2937;
-            color: #e5e7eb;
-            padding: 20px;
-            border-radius: 8px;
+
+        .table-wrap {
             overflow-x: auto;
-            margin: 20px 0;
+            margin: 1rem 0 1.25rem;
         }
-        
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.95rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        th, td {
+            padding: 0.45rem 0.6rem;
+            border-bottom: 1px solid var(--rule);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        thead th {
+            border-bottom: 2px solid var(--text);
+            font-weight: 600;
+            vertical-align: bottom;
+            white-space: normal;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        caption {
+            caption-side: top;
+            text-align: left;
+            color: var(--muted);
+            font-size: 0.9rem;
+            padding-bottom: 0.4rem;
+        }
+
+        figure {
+            margin: 1.5rem 0;
+        }
+
+        figure img {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        figcaption {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
         code {
-            font-family: 'Fira Code', monospace;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
         }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8rem;
+
+        @media (max-width: 480px) {
+            body {
+                font-size: 16px;
             }
-            
-            nav .container {
-                flex-wrap: wrap;
-                gap: 15px;
+
+            table {
+                font-size: 0.85rem;
             }
-            
-            .demo-iframe {
-                height: 400px;
+
+            th, td {
+                padding: 0.4rem 0.3rem;
             }
+        }
+
+        footer {
+            max-width: 46rem;
+            margin: 0 auto;
+            padding: 1rem 1rem 3rem;
+            border-top: 1px solid var(--rule);
+            color: var(--muted);
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1>🌐 Cross-Lingual Sentiment Analysis</h1>
-            <p>Binary sentiment classification for English and Bengali using multilingual transformers (XLM-RoBERTa)</p>
-        </div>
-    </header>
-    
-    <nav>
-        <div class="container">
-            <a href="#about">About</a>
-            <a href="#demo">Demo</a>
-            <a href="#results">Results</a>
-            <a href="#usage">Usage</a>
-            <a href="https://github.com/arif481/crosslingual-sentiment" target="_blank">GitHub</a>
-        </div>
-    </nav>
-    
-    <main>
-        <div class="container">
-            <!-- About Section -->
-            <section id="about">
-                <h2>About This Project</h2>
-                <p>This project demonstrates cross-lingual sentiment analysis using multilingual transformer models. It supports sentiment classification in both English (high-resource) and Bengali (low-resource) languages.</p>
-                
-                <div class="cards">
-                    <div class="card">
-                        <h3>🎯 Zero-Shot Transfer</h3>
-                        <p>Train on English data and evaluate on Bengali without any Bengali training examples.</p>
-                    </div>
-                    <div class="card">
-                        <h3>📊 Low-Resource Learning</h3>
-                        <p>Fine-tune on limited Bengali data to establish a low-resource baseline.</p>
-                    </div>
-                    <div class="card">
-                        <h3>🔗 Combined Training</h3>
-                        <p>Train on both languages for optimal multilingual performance.</p>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Demo Section -->
-            <section id="demo">
-                <h2>Live Demo</h2>
-                <div class="demo-container">
-                    <iframe 
-                        src="https://arif481-crosslingual-demo.hf.space"
-                        class="demo-iframe"
-                        title="Cross-Lingual Sentiment Analysis Demo"
-                        loading="lazy"
-                        allow="accelerometer; camera; encrypted-media; gyroscope;"
-                    ></iframe>
-                    
-                    <!-- Fallback if iframe embedding is blocked -->
-                    <!--
-                    <div class="demo-fallback">
-                        <h3>Interactive Demo</h3>
-                        <p>The demo is available on Hugging Face Spaces.</p>
-                        <img src="demo-screenshots/demo-screenshot.png" alt="Demo Screenshot">
-                        <br>
-                        <a href="https://huggingface.co/spaces/arif481/crosslingual-demo" class="btn" target="_blank">
-                            Open Demo →
-                        </a>
-                    </div>
-                    -->
-                </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <a href="https://huggingface.co/spaces/arif481/crosslingual-demo" class="btn" target="_blank">
-                        Open in Hugging Face Spaces
-                    </a>
-                    <a href="https://huggingface.co/arif481/crosslingual-sentiment-model" class="btn btn-secondary" target="_blank">
-                        View Model on HF Hub
-                    </a>
-                </div>
-            </section>
-            
-            <!-- Results Section -->
-            <section id="results">
-                <h2>Experiment Results</h2>
-                <p>No benchmark results yet. The pipeline has only been checked end to end with a one-epoch run on a small sample, so its scores are not reported here. Run the experiments to get real numbers.</p>
-            </section>
-            
-            <!-- Usage Section -->
-            <section id="usage">
-                <h2>Quick Start</h2>
-                
-                <h3>Using the Model</h3>
-                <pre><code>from transformers import pipeline
+<main>
+    <h1>Cross-lingual sentiment analysis for Bengali</h1>
+    <p class="byline">
+        Md Arifuzzaman
+        <a href="https://github.com/arif481/CrossLingual-Sentiment">Code</a>
+        <a href="https://colab.research.google.com/github/arif481/CrossLingual-Sentiment/blob/main/notebooks/colab_run.ipynb">Run in Colab</a>
+        <a href="https://github.com/arif481/CrossLingual-Sentiment/tree/main/experiments">Metrics</a>
+    </p>
 
-# Load the model
-classifier = pipeline(
-    "sentiment-analysis",
-    model="arif481/crosslingual-sentiment-model"
-)
+    <p class="lead">XLM-RoBERTa base fine-tuned only on English movie-review sentences scores 67.8 macro-F1 on Bengali social media comments. Fine-tuned on 100 Bengali comments instead, it scores 73.7, and on all 9,681 it scores 87.4. Starting from the English model, or adding the English data to the Bengali, moves the Bengali score by less than 2 points at every data size tested.</p>
 
-# English
-result = classifier("This movie is fantastic!")
-print(result)  # [{'label': 'positive', 'score': 0.98}]
+    <p>Every number on this page comes from runs on a free Colab T4. Each run's metrics, including confusion matrices for both test sets, are committed in the repository.</p>
 
-# Bengali
-result = classifier("এই সিনেমাটি অসাধারণ!")
-print(result)  # [{'label': 'positive', 'score': 0.95}]</code></pre>
-                
-                <h3>Running Locally</h3>
-                <pre><code># Clone the repository
-git clone https://github.com/arif481/crosslingual-sentiment.git
-cd crosslingual-sentiment
+    <h2>Setup</h2>
 
-# Install dependencies
+    <p>The task is binary: positive or negative.</p>
+    <ul>
+        <li>English: <a href="https://huggingface.co/datasets/nyu-mll/glue">SST-2</a> from GLUE, sentences from movie reviews. 63,981 sentences for training and 3,368 held out for validation. SST-2's test labels are not public, so its 872-sentence validation split is the test set.</li>
+        <li>Bengali: <a href="https://huggingface.co/datasets/khondoker/SentNoB">SentNoB</a> (Islam et al., Findings of EMNLP 2021), comments from Bangla social media. The paper's train, validation and test files with neutral comments removed: 9,681, 1,213 and 1,225 comments, 53% positive.</li>
+    </ul>
+
+    <p>Each model is trained on English, Bengali or both, and tested on both test sets. The best epoch is chosen on validation data from the training language only, so the zero-shot model never sees a Bengali label. Training runs for up to 4 epochs at learning rate 2e-5 and batch size 32, with sequences cut at 128 tokens and early stopping on validation macro-F1. The baseline is TF-IDF over unigrams and bigrams (50,000 features) with logistic regression.</p>
+
+    <h2>Results</h2>
+
+    <div class="table-wrap">
+        <table>
+            <caption>Macro-F1 (%), one run per setup (seed 42)</caption>
+            <thead>
+                <tr><th>Trained on</th><th>Model</th><th class="num">English test</th><th class="num">Bengali test</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>English</td><td>TF-IDF + LR</td><td class="num">81.6</td><td class="num">35.4</td></tr>
+                <tr><td>English</td><td>XLM-R base</td><td class="num">92.1</td><td class="num">67.8</td></tr>
+                <tr><td>Bengali</td><td>TF-IDF + LR</td><td class="num">33.0</td><td class="num">75.6</td></tr>
+                <tr><td>Bengali</td><td>XLM-R base</td><td class="num">76.9</td><td class="num">87.4</td></tr>
+                <tr><td>English + Bengali</td><td>TF-IDF + LR</td><td class="num">81.2</td><td class="num">73.1</td></tr>
+                <tr><td>English + Bengali</td><td>XLM-R base</td><td class="num">92.0</td><td class="num">87.9</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>Zero-shot transfer gets part of the way. The English-only model is 32 points ahead of TF-IDF on Bengali, which labels 1,216 of the 1,225 comments positive, and 19.6 points behind training on Bengali. Its mistakes mostly go one way: it gets 531 of the 571 negative comments right but calls 342 of the 654 positive ones negative.</p>
+
+    <p>Adding 63,981 English sentences to the Bengali training set moves Bengali F1 from 87.4 to 87.9. With 1,225 test comments the 95% confidence interval is about ±1.9 points, so that is not a measurable gain. English barely moves either (92.1 against 92.0). Transfer runs the other way too: the Bengali-only model scores 76.9 on English without seeing an English example.</p>
+
+    <p>For TF-IDF, adding English costs 2.5 points on Bengali. Under the 50,000-feature cap the combined vocabulary keeps 3,413 Bengali n-grams, against 35,256 when training on Bengali alone.</p>
+
+    <h2>A hundred Bengali labels beat all of SST-2</h2>
+
+    <p>The learning curve asks how many Bengali labels it takes to match English transfer, and whether starting from the English model helps when Bengali data is scarce. XLM-R was fine-tuned on random subsets of the SentNoB training set, from 100 comments to all 9,681, starting either from XLM-R itself or from the English-only model above. Each size was run with seeds 42, 43 and 44. Each seed draws its own subset, smaller subsets are nested inside larger ones, and both starting points see the same comments. A few hundred examples leave too little for a validation set, so every run trains for 4 epochs or at least 200 steps, whichever is longer (batch size 16, learning rate 2e-5), and the final model is tested.</p>
+
+    <figure>
+        <img src="learning_curve.png" width="960" height="630" alt="Bengali macro-F1 against the number of Bengali training comments on a log scale, for both starting points. Both lines rise from about 74 at 100 comments to about 88 at 9,681, staying within 2 points of each other, and both stay above the zero-shot score of 67.8.">
+        <figcaption>Shading is ±1 standard deviation over three seeds. The dashed line is the English-only model, which sees no Bengali labels.</figcaption>
+    </figure>
+
+    <div class="table-wrap">
+        <table>
+            <caption>Bengali test macro-F1 (%), mean ± standard deviation over three seeds</caption>
+            <thead>
+                <tr><th class="num">Bengali training comments</th><th class="num">Start from XLM-R</th><th class="num">Start from the English model</th><th class="num">Difference</th><th class="num">English model, English test</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="num">100</td><td class="num">73.7 ± 1.2</td><td class="num">75.3 ± 0.8</td><td class="num">+1.6</td><td class="num">89.2 ± 1.1</td></tr>
+                <tr><td class="num">250</td><td class="num">79.4 ± 1.0</td><td class="num">77.7 ± 0.2</td><td class="num">−1.6</td><td class="num">88.7 ± 0.7</td></tr>
+                <tr><td class="num">500</td><td class="num">79.1 ± 0.2</td><td class="num">79.9 ± 0.2</td><td class="num">+0.7</td><td class="num">88.0 ± 2.6</td></tr>
+                <tr><td class="num">1,000</td><td class="num">79.7 ± 0.4</td><td class="num">81.0 ± 1.1</td><td class="num">+1.3</td><td class="num">87.3 ± 1.4</td></tr>
+                <tr><td class="num">2,500</td><td class="num">82.2 ± 0.8</td><td class="num">82.7 ± 0.5</td><td class="num">+0.6</td><td class="num">88.8 ± 1.3</td></tr>
+                <tr><td class="num">9,681</td><td class="num">87.6 ± 0.6</td><td class="num">88.1 ± 0.4</td><td class="num">+0.5</td><td class="num">84.4 ± 1.5</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>100 Bengali comments give 73.7, about 6 points above zero-shot transfer from 63,981 English sentences. With 250 comments XLM-R passes the TF-IDF baseline trained on all 9,681 (79.4 against 75.6).</p>
+
+    <p>Starting from the English model is ahead at five of the six sizes, by 0.5 to 1.6 points, and behind by 1.6 at 250. The edge does not grow when Bengali data is scarce. For these two datasets, a few hundred Bengali labels are worth more than the whole English training set.</p>
+
+    <p>Fine-tuning the English model on Bengali keeps most of its English: 87 to 89 F1 up to 2,500 Bengali comments, falling to 84.4 after the full set. Training on both languages at once keeps it all (92.0 for the combined model). With the full training set the Bengali-only runs average 87.6 ± 0.6, close to the single-seed 87.4 in the main results despite the different schedule. The 36 runs took 47 minutes of training.</p>
+
+    <h2>Limitations</h2>
+
+    <p>SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with the paper's. The main results come from a single seed and the learning curve from three, which is too few to separate differences of under a point. XLM-R base is the only encoder tested; a Bangla-specific model such as BanglaBERT is the obvious comparison still missing.</p>
+
+    <h2>Running it</h2>
+
+    <p>The <a href="https://colab.research.google.com/github/arif481/CrossLingual-Sentiment/blob/main/notebooks/colab_run.ipynb">Colab notebook</a> runs everything on a free T4. The data, baseline, three XLM-R runs and results table take about 50 minutes, and the learning curve takes about another hour. To run it locally with Python 3.10 or newer and a GPU:</p>
+
+<pre><code>git clone https://github.com/arif481/CrossLingual-Sentiment.git
+cd CrossLingual-Sentiment
+python -m venv .venv &amp;&amp; source .venv/bin/activate
 pip install -r requirements.txt
 
-# Prepare data
-./scripts/run_preprocess.sh --demo
+python -m src.data_loader --language all
+python -m src.baseline --run-all --output experiments/baseline
+python -m src.train --mode zero_shot      # also low_resource, combined
+python -m src.report
+python -m src.learning_curve</code></pre>
+</main>
 
-# Train model
-./scripts/run_train.sh --mode combined --demo
-
-# Run Streamlit app
-streamlit run app/streamlit_app.py</code></pre>
-                
-                <div style="text-align: center; margin-top: 30px;">
-                    <a href="https://github.com/arif481/crosslingual-sentiment" class="btn" target="_blank">
-                        📖 Full Documentation
-                    </a>
-                    <a href="https://colab.research.google.com/github/arif481/crosslingual-sentiment/blob/main/notebooks/colab_run.ipynb" class="btn btn-secondary" target="_blank">
-                        🚀 Open in Colab
-                    </a>
-                </div>
-            </section>
-        </div>
-    </main>
-    
-    <footer>
-        <div class="container">
-            <p>
-                Cross-Lingual Sentiment Analysis Project<br>
-                <a href="https://github.com/arif481/crosslingual-sentiment">GitHub</a> |
-                <a href="https://huggingface.co/arif481/crosslingual-sentiment-model">Hugging Face</a>
-            </p>
-            <p style="margin-top: 15px; opacity: 0.7;">
-                Built with ❤️ using Transformers, PyTorch, and Streamlit
-            </p>
-        </div>
-    </footer>
-    
-    <script>
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-        
-        // Check if iframe loaded successfully
-        const iframe = document.querySelector('.demo-iframe');
-        if (iframe) {
-            iframe.onerror = function() {
-                // Show fallback if iframe fails
-                console.log('Demo iframe failed to load');
-            };
-        }
-    </script>
+<footer>
+    Md Arifuzzaman, 2026. Code under the <a href="https://github.com/arif481/CrossLingual-Sentiment/blob/main/LICENSE">MIT licence</a>. SentNoB is licensed CC BY-ND 4.0 and is downloaded from the Hugging Face Hub, not stored in the repository.
+</footer>
 </body>
 </html>
