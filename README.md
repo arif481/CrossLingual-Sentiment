@@ -16,7 +16,7 @@ A TF-IDF + logistic regression baseline sets the floor, since word features can'
 
 ## Status
 
-The data pipeline, baseline, all three training modes, evaluation, the Hugging Face upload and a Streamlit/Gradio demo are in place, with tests and CI. The metrics committed in `experiments/combined/metrics.json` come from a one-epoch demo run on a small sample, used to check the pipeline end to end; they are not a benchmark. [paper.md](paper.md) is a working draft.
+The data pipeline, baseline, all three training modes, evaluation, the Hugging Face upload and a Streamlit/Gradio demo are in place, with tests and CI. The metrics committed in `experiments/combined/metrics.json` come from a one-epoch demo run on a small sample, used to check the pipeline end to end; they are not a benchmark.
 
 ## Setup
 

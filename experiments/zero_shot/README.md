@@ -40,16 +40,6 @@ python -m src.evaluate \
     --mode zero_shot
 ```
 
-## Expected Results
+## Results
 
-Zero-shot cross-lingual transfer typically shows:
-- High accuracy on English (source language)
-- Lower but meaningful accuracy on Bengali (target language)
-- Performance gap indicates room for improvement with target language data
-
-| Metric | English | Bengali |
-|--------|---------|---------|
-| Accuracy | ~90% | ~65-75% |
-| F1 Score | ~90% | ~60-70% |
-
-*Note: Actual results depend on dataset size and model configuration.*
+Not measured yet. Run the experiment and the scores land in `metrics.json` in this folder.

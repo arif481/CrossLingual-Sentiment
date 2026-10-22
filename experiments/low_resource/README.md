@@ -29,16 +29,6 @@ low_resource/
 python -m src.train --mode low_resource
 ```
 
-## Expected Results
+## Results
 
-Low-resource training typically shows:
-- Decent performance but limited by small dataset
-- May overfit without careful regularization
-- Provides comparison point for zero-shot and combined approaches
-
-| Metric | Bengali |
-|--------|---------|
-| Accuracy | ~70-80% |
-| F1 Score | ~70-80% |
-
-*Note: Results depend heavily on the amount of Bengali training data available.*
+Not measured yet. Run the experiment and the scores land in `metrics.json` in this folder.

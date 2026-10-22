@@ -29,22 +29,6 @@ combined/
 python -m src.train --mode combined
 ```
 
-## Expected Results
+## Results
 
-Combined training typically shows:
-- Strong performance on both languages
-- Bengali performance often improves over low-resource-only
-- May slightly decrease English performance (negative transfer)
-
-| Metric | English | Bengali |
-|--------|---------|---------|
-| Accuracy | ~88% | ~78-85% |
-| F1 Score | ~88% | ~75-82% |
-
-*Note: Results depend on language balance and dataset sizes.*
-
-## Key Findings
-
-1. **Positive Transfer**: Bengali benefits from English training data
-2. **Balanced Training**: Important to balance language representation
-3. **Best Overall**: Often the best choice for multilingual deployment
+Not measured yet. Run the experiment and the scores land in `metrics.json` in this folder. The committed metrics come from a one-epoch run on a small sample that checks the pipeline, not a benchmark.
