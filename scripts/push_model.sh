@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --mode MODE           Training mode: zero_shot, low_resource, combined (default: combined)"
-            echo "  --checkpoint PATH     Path to checkpoint (default: experiments/<mode>/checkpoint-best)"
+            echo "  --checkpoint PATH     Path to checkpoint (default: models/<mode>-seed42/best)"
             echo "  --repo-name NAME      Repository name (default: crosslingual-sentiment-model)"
             echo "  --private             Make repository private"
             echo "  --help                Show this help message"
@@ -64,7 +64,7 @@ fi
 
 # Set default checkpoint path
 if [ -z "$CHECKPOINT" ]; then
-    CHECKPOINT="experiments/$MODE/checkpoint-best"
+    CHECKPOINT="models/$MODE-seed42/best"
 fi
 
 # Check checkpoint exists
@@ -95,7 +95,7 @@ if [ "$PRIVATE" = true ]; then
 fi
 
 # Check for metrics file
-METRICS_PATH="experiments/$MODE/eval_results.json"
+METRICS_PATH="experiments/$MODE/seed42/metrics.json"
 if [ -f "$METRICS_PATH" ]; then
     CMD="$CMD --metrics $METRICS_PATH"
     echo "Found metrics at: $METRICS_PATH"

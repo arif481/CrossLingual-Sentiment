@@ -315,9 +315,13 @@ def run_cross_lingual_baseline(
     data_dir: Union[str, Path],
     output_dir: Union[str, Path],
     config: Dict
-) -> Dict[str, Dict[str, float]]:
+) -> Dict[str, Dict[str, Dict[str, float]]]:
     """
-    Run baseline experiments for cross-lingual evaluation.
+    Run the baseline for every experiment mode, testing on both languages.
+    
+    Word features do not carry over between English and Bengali, so the
+    zero-shot Bengali score shows what transfer looks like without a
+    multilingual encoder.
     
     Args:
         data_dir: Data directory
@@ -325,82 +329,44 @@ def run_cross_lingual_baseline(
         config: Configuration dict
         
     Returns:
-        Dictionary of results per experiment
+        Dictionary of test metrics per mode and language
     """
     data_dir = Path(data_dir)
+    output_dir = Path(output_dir)
+    baseline_config = config["baseline"]
     results = {}
     
-    # Experiment 1: Train on English, test on Bengali (Zero-shot)
-    logger.info("\n" + "="*60)
-    logger.info("EXPERIMENT 1: Zero-shot (English → Bengali)")
-    logger.info("="*60)
+    def read(lang: str, split: str) -> pd.DataFrame:
+        return pd.read_csv(data_dir / lang / f"{split}.csv")
     
-    en_train = data_dir / "en" / "train.csv"
-    bn_test = data_dir / "bn" / "test.csv"
-    
-    if en_train.exists() and bn_test.exists():
-        results["zero_shot"] = train_and_evaluate_baseline(
-            en_train,
-            bn_test,
-            output_dir / "zero_shot",
-            config["baseline"]
+    for mode, exp_config in config["experiments"].items():
+        train_langs = exp_config["train_languages"]
+        logger.info("\n" + "=" * 60)
+        logger.info(f"BASELINE: {mode} (train on {', '.join(train_langs)})")
+        logger.info("=" * 60)
+        
+        train_df = pd.concat([read(lang, "train") for lang in train_langs])
+        model = TfidfBaseline(
+            max_features=baseline_config["max_features"],
+            ngram_range=tuple(baseline_config["ngram_range"]),
+            solver=baseline_config["solver"],
+            max_iter=baseline_config["max_iter"],
+            class_weight=baseline_config["class_weight"]
         )
-    else:
-        logger.warning("Missing files for zero-shot experiment")
+        model.fit(train_df["text"].tolist(), train_df["label"].tolist())
+        
+        results[mode] = {"train_languages": train_langs, "train_samples": len(train_df), "test": {}}
+        for lang in ["en", "bn"]:
+            test_df = read(lang, "test")
+            metrics = model.evaluate(test_df["text"].tolist(), test_df["label"].tolist())
+            metrics["n"] = len(test_df)
+            results[mode]["test"][lang] = metrics
+            logger.info(f"  {lang} test: accuracy={metrics['accuracy']:.4f} "
+                        f"macro-F1={metrics['f1']:.4f}")
+        
+        save_json(results[mode], output_dir / mode / "metrics.json")
     
-    # Experiment 2: Train on Bengali, test on Bengali (Low-resource)
-    logger.info("\n" + "="*60)
-    logger.info("EXPERIMENT 2: Low-resource (Bengali only)")
-    logger.info("="*60)
-    
-    bn_train = data_dir / "bn" / "train.csv"
-    
-    if bn_train.exists() and bn_test.exists():
-        results["low_resource"] = train_and_evaluate_baseline(
-            bn_train,
-            bn_test,
-            output_dir / "low_resource",
-            config["baseline"]
-        )
-    else:
-        logger.warning("Missing files for low-resource experiment")
-    
-    # Experiment 3: Train on English, test on English (Monolingual)
-    logger.info("\n" + "="*60)
-    logger.info("EXPERIMENT 3: Monolingual English")
-    logger.info("="*60)
-    
-    en_test = data_dir / "en" / "test.csv"
-    
-    if en_train.exists() and en_test.exists():
-        results["english_mono"] = train_and_evaluate_baseline(
-            en_train,
-            en_test,
-            output_dir / "english_mono",
-            config["baseline"]
-        )
-    else:
-        logger.warning("Missing files for English monolingual experiment")
-    
-    # Save combined results
     save_json(results, output_dir / "all_baseline_results.json")
-    
-    # Print summary
-    logger.info("\n" + "="*60)
-    logger.info("BASELINE RESULTS SUMMARY")
-    logger.info("="*60)
-    
-    summary_rows = []
-    for exp_name, metrics in results.items():
-        summary_rows.append({
-            "Experiment": exp_name,
-            "Accuracy": f"{metrics['accuracy']:.4f}",
-            "F1": f"{metrics['f1']:.4f}"
-        })
-    
-    summary_df = pd.DataFrame(summary_rows)
-    logger.info(f"\n{summary_df.to_string(index=False)}")
-    
     return results
 
 

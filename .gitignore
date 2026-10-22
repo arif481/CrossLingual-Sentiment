@@ -197,3 +197,6 @@ mlruns/
 
 # Tensorboard logs
 tensorboard/
+
+# Trained models and checkpoints (about 1 GB per run)
+models/

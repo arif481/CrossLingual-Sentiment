@@ -1,31 +1,21 @@
 """
-Cross-Lingual Sentiment Analysis Package
-========================================
+Cross-lingual sentiment analysis with XLM-RoBERTa: English (SST-2) to
+Bengali (SentNoB) transfer, Bengali-only training and combined training.
 
-A research-ready framework for cross-lingual sentiment analysis
-using multilingual transformers (XLM-RoBERTa).
-
-Supports:
-- Zero-shot cross-lingual transfer (English → Bengali)
-- Low-resource fine-tuning
-- Combined multilingual training
+Modules are imported on use (python -m src.train, from src import train)
+so that data preparation does not load torch.
 """
 
-__version__ = "0.1.0"
-__author__ = "Cross-Lingual Sentiment Team"
-
-from . import data_loader
-from . import preprocess
-from . import model
-from . import train
-from . import evaluate
-from . import utils
+__version__ = "0.2.0"
+__author__ = "Md Arifuzzaman"
 
 __all__ = [
+    "baseline",
     "data_loader",
-    "preprocess", 
-    "model",
-    "train",
     "evaluate",
+    "model",
+    "preprocess",
+    "report",
+    "train",
     "utils",
 ]

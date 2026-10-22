@@ -1,97 +1,39 @@
-# Data Directory
+# Data
 
-This directory contains raw and processed datasets for cross-lingual sentiment analysis.
-
-## Directory Structure
+Nothing in `processed/` is committed. `python -m src.data_loader --language all` rebuilds it from the Hugging Face Hub:
 
 ```
-data/
-├── raw/                    # Downloaded raw datasets
-│   ├── en/                 # English datasets
-│   ├── bn/                 # Bengali datasets
-│   └── demo/               # Small demo subset
-├── processed/              # Tokenized and split datasets
-│   ├── en/
-│   │   ├── train.csv
-│   │   ├── val.csv
-│   │   └── test.csv
-│   └── bn/
-│       ├── train.csv
-│       ├── val.csv
-│       └── test.csv
-└── README.md
+processed/
+  en/  train.csv  val.csv  test.csv    SST-2
+  bn/  train.csv  val.csv  test.csv    SentNoB, neutral comments removed
 ```
 
-## Dataset Sources
+Each CSV has two columns: `text` and `label` (0 = negative, 1 = positive).
 
-### English Dataset (SST-2)
-- **Source**: Stanford Sentiment Treebank (via GLUE benchmark)
-- **Hugging Face ID**: `glue` (subset: `sst2`)
-- **Direct URL**: https://huggingface.co/datasets/glue/viewer/sst2
-- **Size**: ~67K training examples, ~872 validation examples
-- **Labels**: 0 (negative), 1 (positive)
-- **Download**: Automatically downloaded via `datasets` library
+## English: SST-2
 
-```python
-from datasets import load_dataset
-dataset = load_dataset("glue", "sst2")
-```
+[nyu-mll/glue](https://huggingface.co/datasets/nyu-mll/glue), subset `sst2`. The test split has no public labels, so:
 
-### Bengali Dataset
-- **Primary Source**: Bengali Sentiment Dataset on Hugging Face
-- **Hugging Face ID**: `sepidmnorozy/Bengali_sentiment`
-- **Direct URL**: https://huggingface.co/datasets/sepidmnorozy/Bengali_sentiment
-- **Alternative**: Kaggle Bengali Sentiment datasets
+| Split here | Taken from | Size |
+|---|---|---|
+| train | SST-2 train, minus the held-out 5% | 63,981 |
+| val | stratified 5% of SST-2 train (seed 42) | 3,368 |
+| test | SST-2 validation | 872 |
 
-```python
-from datasets import load_dataset
-dataset = load_dataset("sepidmnorozy/Bengali_sentiment")
-```
+SST-2's training set contains phrases cut from the same sentences, so the held-out validation set overlaps with training and only serves to pick the best epoch. The test set is separate sentences.
 
-### Alternative Bengali Sources (Kaggle)
+## Bengali: SentNoB
 
-If the Hugging Face dataset is unavailable:
+[khondoker/SentNoB](https://huggingface.co/datasets/khondoker/SentNoB), the dataset from Islam et al., "SentNoB: A Dataset for Analysing Sentiment on Noisy Bangla Texts" (Findings of EMNLP 2021). Its labels are 0 = neutral, 1 = positive and 2 = negative. `configs/config.yaml` maps 1 to positive and 2 to negative and the loader drops neutral comments:
 
-1. **Bengali Sentiment Analysis Dataset**
-   - URL: https://www.kaggle.com/datasets/cryptexcode/bangla-sentiment-analysis
-   
-2. **Setting up Kaggle API**:
-   ```bash
-   # Install kaggle CLI
-   pip install kaggle
-   
-   # Create API token at https://www.kaggle.com/account
-   # Download kaggle.json and place it at:
-   mkdir -p ~/.kaggle
-   mv kaggle.json ~/.kaggle/
-   chmod 600 ~/.kaggle/kaggle.json
-   
-   # Download dataset
-   kaggle datasets download -d cryptexcode/bangla-sentiment-analysis -p data/raw/bn/
-   unzip data/raw/bn/bangla-sentiment-analysis.zip -d data/raw/bn/
-   ```
+| Split here | File | Comments kept | Neutral dropped |
+|---|---|---|---|
+| train | Train.csv | 9,681 | 2,894 |
+| val | Val.csv | 1,213 | 354 |
+| test | Test.csv | 1,225 | 361 |
 
-## Label Mapping
+SentNoB is licensed CC BY-ND 4.0, which is why it is downloaded rather than copied into this repository.
 
-All datasets are standardized to binary labels:
-- `0`: Negative sentiment
-- `1`: Positive sentiment
+## Demo data
 
-## Data Processing Pipeline
-
-1. **Download**: Run `python -m src.data_loader`
-2. **Preprocess**: Run `python -m src.preprocess`
-3. **Tokenize**: Cached tokenized datasets stored in `processed/`
-
-## Demo Data
-
-A small subset (~100 samples per language) is included in `data/raw/demo/` for quick testing:
-- `demo_en.csv`: English samples
-- `demo_bn.csv`: Bengali samples
-
-## Privacy and Ethics
-
-- Datasets contain publicly available text from reviews/social media
-- No personally identifiable information (PII) is stored
-- Bengali data may contain cultural/regional sentiments - use responsibly
-- See main README for ethical considerations
+`raw/demo/demo_en.csv` and `raw/demo/demo_bn.csv` hold 50 short sentences each, used only by `--use-demo` and the CI smoke test. Scores on them mean nothing.

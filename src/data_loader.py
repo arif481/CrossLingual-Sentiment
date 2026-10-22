@@ -3,14 +3,13 @@ Data Loader Module
 ==================
 
 Functions for downloading, loading, and preparing sentiment datasets
-for English and Bengali languages.
+for English (SST-2) and Bengali (SentNoB).
 """
 
-import os
 import logging
 import argparse
 from pathlib import Path
-from typing import Optional, Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 import pandas as pd
 import numpy as np
@@ -21,185 +20,86 @@ from .utils import load_config, ensure_dir, setup_logging
 logger = logging.getLogger(__name__)
 
 
-def download_english_dataset(
-    output_dir: Union[str, Path],
-    dataset_name: str = "sst2"
-) -> pd.DataFrame:
+def map_labels(df: pd.DataFrame, label_map: Dict[int, int]) -> pd.DataFrame:
     """
-    Download English sentiment dataset (SST-2 from GLUE).
-    
-    Args:
-        output_dir: Directory to save downloaded data
-        dataset_name: Name of dataset ('sst2' or 'imdb')
-        
-    Returns:
-        DataFrame with 'text' and 'label' columns
+    Map dataset-specific labels to {0: negative, 1: positive}.
+
+    Labels missing from label_map (for example SentNoB's neutral class)
+    are dropped.
     """
-    from datasets import load_dataset
-    
-    output_dir = ensure_dir(Path(output_dir) / "en")
-    logger.info(f"Downloading English dataset: {dataset_name}")
-    
-    if dataset_name == "sst2":
-        # Load SST-2 from GLUE
-        dataset = load_dataset("glue", "sst2")
-        
-        # Combine train and validation (SST-2 test has no labels)
-        train_df = pd.DataFrame({
-            "text": dataset["train"]["sentence"],
-            "label": dataset["train"]["label"]
-        })
-        val_df = pd.DataFrame({
-            "text": dataset["validation"]["sentence"],
-            "label": dataset["validation"]["label"]
-        })
-        
-        df = pd.concat([train_df, val_df], ignore_index=True)
-        
-    elif dataset_name == "imdb":
-        # Load IMDB dataset
-        dataset = load_dataset("imdb")
-        
-        train_df = pd.DataFrame({
-            "text": dataset["train"]["text"],
-            "label": dataset["train"]["label"]
-        })
-        test_df = pd.DataFrame({
-            "text": dataset["test"]["text"],
-            "label": dataset["test"]["label"]
-        })
-        
-        df = pd.concat([train_df, test_df], ignore_index=True)
-    else:
-        raise ValueError(f"Unknown English dataset: {dataset_name}")
-    
-    # Save raw data
-    raw_path = output_dir / f"{dataset_name}_raw.csv"
-    df.to_csv(raw_path, index=False)
-    logger.info(f"Saved English dataset to {raw_path} ({len(df)} samples)")
-    
+    df = df.copy()
+    df["label"] = df["label"].map({int(k): int(v) for k, v in label_map.items()})
+    dropped = int(df["label"].isna().sum())
+    df = df.dropna(subset=["label"])
+    df["label"] = df["label"].astype(int)
+    if dropped:
+        logger.info(f"Dropped {dropped} samples whose label is not in the label map")
     return df
 
 
-def download_bengali_dataset(
-    output_dir: Union[str, Path],
-    use_kaggle_fallback: bool = False
-) -> pd.DataFrame:
+def load_english_splits(config: Dict, seed: int = 42) -> Dict[str, pd.DataFrame]:
     """
-    Download Bengali sentiment dataset from Hugging Face or Kaggle.
-    
-    Args:
-        output_dir: Directory to save downloaded data
-        use_kaggle_fallback: If True, attempt Kaggle download if HF fails
-        
-    Returns:
-        DataFrame with 'text' and 'label' columns
+    Load SST-2 as train/val/test.
+
+    SST-2's test split has no labels, so the official validation split is
+    used as the test set and a stratified part of train is held out for
+    validation.
     """
     from datasets import load_dataset
-    
-    output_dir = ensure_dir(Path(output_dir) / "bn")
-    logger.info("Downloading Bengali sentiment dataset")
-    
-    try:
-        # Try Hugging Face dataset first
-        dataset = load_dataset("sepidmnorozy/Bengali_sentiment")
-        
-        # Extract text and labels
-        if "train" in dataset:
-            df = pd.DataFrame(dataset["train"])
-        else:
-            # Some datasets only have one split
-            df = pd.DataFrame(dataset[list(dataset.keys())[0]])
-        
-        # Rename columns if needed
-        column_mapping = {
-            "sentence": "text",
-            "review": "text", 
-            "sentiment": "label",
-            "polarity": "label"
-        }
-        
-        for old_col, new_col in column_mapping.items():
-            if old_col in df.columns and new_col not in df.columns:
-                df = df.rename(columns={old_col: new_col})
-        
-        # Ensure we have the required columns
-        if "text" not in df.columns:
-            text_col = [c for c in df.columns if c not in ["label", "id"]][0]
-            df = df.rename(columns={text_col: "text"})
-        
-        logger.info(f"Successfully loaded Bengali dataset from Hugging Face")
-        
-    except Exception as e:
-        logger.warning(f"Failed to load from Hugging Face: {e}")
-        
-        if use_kaggle_fallback:
-            df = _download_bengali_from_kaggle(output_dir)
-        else:
-            logger.info("Using demo Bengali data as fallback")
-            # Use demo data as fallback
-            demo_path = Path("data/raw/demo/demo_bn.csv")
-            if demo_path.exists():
-                df = pd.read_csv(demo_path)
-            else:
-                raise RuntimeError(
-                    "Bengali dataset unavailable. Set up Kaggle API or use demo data.\n"
-                    "See data/README.md for Kaggle setup instructions."
-                )
-    
-    # Standardize labels
-    df = standardize_labels(df)
-    
-    # Keep only required columns
-    df = df[["text", "label"]]
-    
-    # Save raw data
-    raw_path = output_dir / "bengali_sentiment_raw.csv"
-    df.to_csv(raw_path, index=False)
-    logger.info(f"Saved Bengali dataset to {raw_path} ({len(df)} samples)")
-    
-    return df
+
+    ds_config = config["datasets"]["english"]
+    logger.info(f"Loading {ds_config['hf_dataset_id']} ({ds_config['hf_subset']})")
+    dataset = load_dataset(ds_config["hf_dataset_id"], ds_config["hf_subset"])
+
+    def to_frame(split):
+        return pd.DataFrame({
+            "text": dataset[split][ds_config["text_column"]],
+            "label": dataset[split][ds_config["label_column"]],
+        })
+
+    full_train = to_frame("train")
+    train_df, val_df = train_test_split(
+        full_train,
+        test_size=ds_config["val_size"],
+        random_state=seed,
+        stratify=full_train["label"],
+    )
+    return {"train": train_df, "val": val_df, "test": to_frame("validation")}
 
 
-def _download_bengali_from_kaggle(output_dir: Path) -> pd.DataFrame:
+def load_bengali_splits(config: Dict) -> Dict[str, pd.DataFrame]:
     """
-    Download Bengali dataset from Kaggle (requires API setup).
-    
-    Args:
-        output_dir: Directory to save downloaded data
-        
-    Returns:
-        DataFrame with text and label columns
+    Load SentNoB's train/val/test files and keep positive and negative comments.
     """
-    try:
-        import kaggle
-        
-        logger.info("Attempting Kaggle download for Bengali sentiment data")
-        
-        # Download dataset
-        kaggle.api.dataset_download_files(
-            "cryptexcode/bangla-sentiment-analysis",
-            path=str(output_dir),
-            unzip=True
+    from huggingface_hub import hf_hub_download
+
+    ds_config = config["datasets"]["bengali"]
+    splits = {}
+    for split, filename in ds_config["files"].items():
+        path = hf_hub_download(
+            repo_id=ds_config["hf_dataset_id"],
+            filename=filename,
+            repo_type="dataset",
         )
-        
-        # Find and load the CSV
-        csv_files = list(output_dir.glob("*.csv"))
-        if not csv_files:
-            raise FileNotFoundError("No CSV files found in Kaggle download")
-        
-        df = pd.read_csv(csv_files[0])
-        logger.info(f"Loaded Kaggle Bengali dataset: {len(df)} samples")
-        
-        return df
-        
-    except ImportError:
-        raise RuntimeError(
-            "Kaggle library not installed. Run: pip install kaggle\n"
-            "Then set up API token: https://www.kaggle.com/docs/api"
-        )
-    except Exception as e:
-        raise RuntimeError(f"Kaggle download failed: {e}")
+        raw = pd.read_csv(path)
+        df = pd.DataFrame({
+            "text": raw[ds_config["text_column"]],
+            "label": raw[ds_config["label_column"]],
+        })
+        splits[split] = map_labels(df, ds_config["label_map"])
+        logger.info(f"Loaded {ds_config['hf_dataset_id']}/{filename}: {len(splits[split])} samples")
+    return splits
+
+
+def save_splits(splits: Dict[str, pd.DataFrame], out_dir: Union[str, Path]) -> None:
+    """Save train/val/test DataFrames as CSV files and log their label balance."""
+    out_dir = ensure_dir(out_dir)
+    for split_name, split_df in splits.items():
+        path = out_dir / f"{split_name}.csv"
+        split_df[["text", "label"]].to_csv(path, index=False)
+        pos_count = int((split_df["label"] == 1).sum())
+        logger.info(f"Saved {split_name}: {len(split_df)} samples "
+                    f"({pos_count} positive, {len(split_df) - pos_count} negative) to {path}")
 
 
 def standardize_labels(df: pd.DataFrame) -> pd.DataFrame:
@@ -463,12 +363,6 @@ def main():
         help="Language to download"
     )
     parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="data/raw",
-        help="Output directory for raw data"
-    )
-    parser.add_argument(
         "--processed-dir",
         type=str,
         default="data/processed",
@@ -490,53 +384,33 @@ def main():
     seed = config["training"]["seed"]
     split_config = config["data_split"]
     
-    datasets = {}
-    
     if args.use_demo:
-        # Use demo data
+        # Demo data has no predefined splits: standardize and split it here
         logger.info("Using demo datasets")
-        
-        demo_en = Path("data/raw/demo/demo_en.csv")
-        demo_bn = Path("data/raw/demo/demo_bn.csv")
-        
-        if args.language in ["en", "all"] and demo_en.exists():
-            datasets["en"] = pd.read_csv(demo_en)
-            logger.info(f"Loaded demo English data: {len(datasets['en'])} samples")
-            
-        if args.language in ["bn", "all"] and demo_bn.exists():
-            datasets["bn"] = pd.read_csv(demo_bn)
-            logger.info(f"Loaded demo Bengali data: {len(datasets['bn'])} samples")
+        demo_files = {"en": Path("data/raw/demo/demo_en.csv"),
+                      "bn": Path("data/raw/demo/demo_bn.csv")}
+        for lang, demo_path in demo_files.items():
+            if args.language not in [lang, "all"]:
+                continue
+            df = standardize_labels(pd.read_csv(demo_path))
+            split_and_save(
+                df,
+                Path(args.processed_dir) / lang,
+                seed=seed,
+                train_ratio=split_config["train_ratio"],
+                val_ratio=split_config["val_ratio"],
+                test_ratio=split_config["test_ratio"]
+            )
     else:
-        # Download full datasets
-        if args.language in ["en", "all"]:
-            datasets["en"] = download_english_dataset(args.output_dir)
-        
-        if args.language in ["bn", "all"]:
-            datasets["bn"] = download_bengali_dataset(args.output_dir)
-    
-    # Process and split each dataset
-    for lang, df in datasets.items():
-        logger.info(f"\nProcessing {lang} dataset...")
-        
-        # Standardize labels
-        df = standardize_labels(df)
-        
-        # Print stats
-        stats = get_dataset_stats(df)
-        logger.info(f"Dataset statistics for {lang}:")
-        for key, value in stats.items():
-            logger.info(f"  {key}: {value}")
-        
-        # Split and save
-        out_dir = Path(args.processed_dir) / lang
-        split_and_save(
-            df,
-            out_dir,
-            seed=seed,
-            train_ratio=split_config["train_ratio"],
-            val_ratio=split_config["val_ratio"],
-            test_ratio=split_config["test_ratio"]
-        )
+        loaders = {"en": lambda: load_english_splits(config, seed),
+                   "bn": lambda: load_bengali_splits(config)}
+        for lang, load in loaders.items():
+            if args.language not in [lang, "all"]:
+                continue
+            splits = load()
+            stats = get_dataset_stats(pd.concat(splits.values()))
+            logger.info(f"Dataset statistics for {lang}: {stats}")
+            save_splits(splits, Path(args.processed_dir) / lang)
     
     logger.info("\nData loading complete!")
 

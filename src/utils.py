@@ -35,6 +35,9 @@ def setup_logging(
             logging.StreamHandler(),
         ]
     )
+    # HTTP clients log every Hub request at INFO; keep only their warnings
+    for name in ["httpx", "httpx2", "httpcore", "urllib3", "filelock"]:
+        logging.getLogger(name).setLevel(logging.WARNING)
     logger = logging.getLogger(__name__)
     return logger
 

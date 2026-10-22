@@ -130,8 +130,8 @@ tags:
   - xlm-roberta
   - text-classification
 datasets:
-  - glue
-  - sepidmnorozy/Bengali_sentiment
+  - nyu-mll/glue
+  - khondoker/SentNoB
 metrics:
   - accuracy
   - f1

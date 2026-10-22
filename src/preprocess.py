@@ -255,15 +255,15 @@ def create_hf_dataset(
     df = clean_dataframe(df)
     
     # Create HF dataset
-    dataset = HFDataset.from_pandas(df)
+    dataset = HFDataset.from_pandas(df, preserve_index=False)
     
-    # Tokenize
+    # Tokenize without padding; DataCollatorWithPadding pads each batch to
+    # its longest sequence, which is much faster for short SST-2 sentences
     def tokenize_function(examples):
         return tokenizer(
             examples["text"],
             truncation=True,
-            max_length=max_length,
-            padding="max_length"
+            max_length=max_length
         )
     
     tokenized_dataset = dataset.map(

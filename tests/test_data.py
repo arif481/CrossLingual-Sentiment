@@ -15,6 +15,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data_loader import (
+    map_labels,
     standardize_labels,
     split_and_save,
     get_dataset_stats,
@@ -67,6 +68,27 @@ class TestStandardizeLabels:
         df = pd.DataFrame({"text": ["a", "b"]})
         with pytest.raises(ValueError):
             standardize_labels(df)
+
+
+class TestMapLabels:
+    """Tests for dataset-specific label maps."""
+    
+    def test_sentnob_mapping_drops_neutral(self):
+        """SentNoB: 1 = positive, 2 = negative, 0 = neutral (dropped)."""
+        df = pd.DataFrame({
+            "text": ["neutral", "positive", "negative", "positive"],
+            "label": [0, 1, 2, 1]
+        })
+        result = map_labels(df, {1: 1, 2: 0})
+        assert list(result["text"]) == ["positive", "negative", "positive"]
+        assert list(result["label"]) == [1, 0, 1]
+        assert result["label"].dtype == int
+    
+    def test_string_keys_from_yaml(self):
+        """Label maps read from YAML may have string keys."""
+        df = pd.DataFrame({"text": ["a", "b"], "label": [2, 1]})
+        result = map_labels(df, {"1": 1, "2": 0})
+        assert list(result["label"]) == [0, 1]
 
 
 class TestSplitAndSave:

@@ -3,7 +3,7 @@
 
 # Model Configuration
 model:
-  default_model: "xlm-roberta-base"
+  default_model: "FacebookAI/xlm-roberta-base"
   num_labels: 2
   max_length: 128
   dropout: 0.1
@@ -17,19 +17,30 @@ model:
 # Dataset Configuration
 datasets:
   english:
+    # SST-2 test labels are hidden, so the official validation split (872
+    # sentences) is our English test set and val_size of train is held out
+    # for checkpoint selection.
     name: "sst2"
-    source: "huggingface"
-    hf_dataset_id: "glue"
+    hf_dataset_id: "nyu-mll/glue"
     hf_subset: "sst2"
     text_column: "sentence"
     label_column: "label"
+    val_size: 0.05
   bengali:
-    name: "bengali_sentiment"
-    source: "huggingface"
-    hf_dataset_id: "sepidmnorozy/Bengali_sentiment"
-    text_column: "text"
-    label_column: "sentiment"
-    fallback_kaggle: "kazanova/sentiment140"
+    # SentNoB (Islam et al., Findings of EMNLP 2021): Bangla social media
+    # comments, 0 = neutral, 1 = positive, 2 = negative. We use the paper's
+    # train/val/test files and drop neutral comments.
+    name: "sentnob"
+    hf_dataset_id: "khondoker/SentNoB"
+    files:
+      train: "Train.csv"
+      val: "Val.csv"
+      test: "Test.csv"
+    text_column: "Data"
+    label_column: "Label"
+    label_map:
+      1: 1
+      2: 0
 
 # Language Configuration
 languages:
@@ -37,21 +48,20 @@ languages:
   - bn
 
 # Training Configuration
+# Evaluation and checkpoint selection happen once per epoch, on the
+# validation data of the training language(s) only.
 training:
   seed: 42
-  batch_size: 16
-  eval_batch_size: 32
-  epochs: 5
+  batch_size: 32
+  eval_batch_size: 64
+  epochs: 4
   learning_rate: 2.0e-5
   weight_decay: 0.01
   warmup_ratio: 0.1
   gradient_accumulation_steps: 1
   fp16: true
-  eval_steps: 500
-  save_steps: 500
   logging_steps: 100
-  save_total_limit: 3
-  early_stopping_patience: 3
+  early_stopping_patience: 2
   metric_for_best_model: "f1"
   greater_is_better: true
 
@@ -70,6 +80,8 @@ paths:
   logs_dir: "logs"
 
 # Experiment Modes
+# Every mode is tested on both English and Bengali; eval_languages are the
+# languages the mode is meant to be judged on.
 experiments:
   zero_shot:
     train_languages: ["en"]
@@ -98,8 +110,8 @@ huggingface:
       - cross-lingual
       - xlm-roberta
     datasets:
-      - glue
-      - sepidmnorozy/Bengali_sentiment
+      - nyu-mll/glue
+      - khondoker/SentNoB
     metrics:
       - accuracy
       - f1
