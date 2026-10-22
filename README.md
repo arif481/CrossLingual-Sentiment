@@ -61,6 +61,7 @@ python -m src.data_loader --language all                 # download and split SS
 python -m src.baseline --run-all --output experiments/baseline
 python -m src.train --mode low_resource                  # or zero_shot, combined; add --seed N
 python -m src.report                                     # writes experiments/results.md
+python -m src.learning_curve                             # needs models/zero_shot-seed42/best from the zero_shot run
 ```
 
 `python -m src.train --mode combined --max-train-samples 256 --max-eval-samples 128` is a quick check that everything runs.
@@ -77,7 +78,7 @@ The model at [arif481/crosslingual-sentiment-model](https://huggingface.co/arif4
 
 ```
 configs/      hyperparameters and dataset settings
-src/          data loading, preprocessing, baseline, training, report, evaluation, HF upload
+src/          data loading, preprocessing, baseline, training, learning curve, report, evaluation, HF upload
 experiments/  metrics from each run and the results summary
 scripts/      shell wrappers for preprocessing, training and upload
 app/          Streamlit and Gradio demos
