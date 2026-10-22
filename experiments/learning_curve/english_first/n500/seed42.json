@@ -1,0 +1,49 @@
+{
+  "condition": "english_first",
+  "size": 500,
+  "seed": 42,
+  "positive_share": 0.514,
+  "epochs": 7,
+  "steps": 224,
+  "batch_size": 16,
+  "learning_rate": 2e-05,
+  "start_model": "models/zero_shot-seed42/best",
+  "test": {
+    "bn": {
+      "accuracy": 0.8,
+      "precision": 0.8005977614606496,
+      "recall": 0.8019114488771777,
+      "f1": 0.7998634303391369,
+      "n": 1225,
+      "confusion_matrix": [
+        [
+          474,
+          97
+        ],
+        [
+          148,
+          506
+        ]
+      ]
+    },
+    "en": {
+      "accuracy": 0.8910550458715596,
+      "precision": 0.9001729215638594,
+      "recall": 0.8896922623558138,
+      "f1": 0.890153458959375,
+      "n": 872,
+      "confusion_matrix": [
+        [
+          349,
+          79
+        ],
+        [
+          16,
+          428
+        ]
+      ]
+    }
+  },
+  "runtime_seconds": 28.34818983078003,
+  "device": "Tesla T4"
+}

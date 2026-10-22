@@ -45,9 +45,33 @@ What the numbers show:
 
 Training took 4.8 minutes (Bengali only), 18.5 minutes (English only) and 22 minutes (combined), with torch 2.11, transformers 5.20.2 and datasets 5.1.0.
 
+## A hundred Bengali labels beat all of SST-2
+
+The learning curve asks how many Bengali labels it takes to match English transfer, and whether starting from the English model helps when Bengali data is scarce. XLM-R was fine-tuned on random subsets of the SentNoB training set, from 100 comments to all 9,681, starting either from XLM-R itself or from the English-only model above. Each size was run with seeds 42, 43 and 44. Each seed draws its own subset, smaller subsets are nested inside larger ones, and both starting points see the same comments. A few hundred examples leave too little for a validation set, so every run trains for 4 epochs or at least 200 steps, whichever is longer (batch size 16, learning rate 2e-5), and the final model is tested.
+
+Bengali test macro-F1 (%), mean ± standard deviation over the three seeds:
+
+| Bengali training comments | Start from XLM-R | Start from the English model | Difference | English model, English test |
+|---|---|---|---|---|
+| 100 | 73.7 ± 1.2 | 75.3 ± 0.8 | +1.6 | 89.2 ± 1.1 |
+| 250 | 79.4 ± 1.0 | 77.7 ± 0.2 | −1.6 | 88.7 ± 0.7 |
+| 500 | 79.1 ± 0.2 | 79.9 ± 0.2 | +0.7 | 88.0 ± 2.6 |
+| 1,000 | 79.7 ± 0.4 | 81.0 ± 1.1 | +1.3 | 87.3 ± 1.4 |
+| 2,500 | 82.2 ± 0.8 | 82.7 ± 0.5 | +0.6 | 88.8 ± 1.3 |
+| 9,681 | 87.6 ± 0.6 | 88.1 ± 0.4 | +0.5 | 84.4 ± 1.5 |
+
+![Bengali macro-F1 against the number of Bengali training comments, for both starting points, with the zero-shot score as a dashed line](experiments/learning_curve/learning_curve.png)
+
+- 100 Bengali comments give 73.7, about 6 points above zero-shot transfer from 63,981 English sentences (67.8). With 250 comments XLM-R passes the TF-IDF baseline trained on all 9,681 (79.4 against 75.6).
+- Starting from the English model is ahead at five of the six sizes, by 0.5 to 1.6 points, and behind by 1.6 at 250. The edge does not grow when Bengali data is scarce. For these two datasets, a few hundred Bengali labels are worth more than the whole English training set.
+- Fine-tuning the English model on Bengali keeps most of its English: 87 to 89 F1 up to 2,500 Bengali comments, falling to 84.4 after the full set. Training on both languages at once keeps it all (92.0 for the combined model above).
+- With the full training set, the Bengali-only runs average 87.6 ± 0.6, close to the single-seed 87.4 in the main results despite the different schedule.
+
+Per-run metrics, with confusion matrices for both test sets, are in [experiments/learning_curve/](experiments/learning_curve/). The 36 runs took 47 minutes of training on the T4.
+
 ## Running the experiments
 
-The quickest way is the [Colab notebook](notebooks/colab_run.ipynb) on a free T4 GPU, about 50 minutes end to end. It prepares the data, runs the baseline and the three XLM-RoBERTa runs, prints the results table and downloads `results.zip`.
+The quickest way is the [Colab notebook](notebooks/colab_run.ipynb) on a free T4 GPU. It prepares the data, runs the baseline and the three XLM-RoBERTa runs and prints the results table in about 50 minutes. The learning curve adds about an hour, and the last cell downloads `results.zip`.
 
 To run it locally (Python 3.10 or newer, and a GPU for the transformer runs):
 
@@ -90,7 +114,7 @@ Run the tests with `pytest tests/ -v`.
 
 ## Limitations
 
-SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with it. All results are from a single seed, and with 1,225 Bengali test comments differences of a point or two are noise; setting `SEEDS = [42, 43, 44]` in the notebook repeats every run and reports the mean and standard deviation. The only multilingual encoder tested is XLM-R base; a Bangla-specific model such as BanglaBERT is the obvious comparison still missing.
+SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with it. The main results are from a single seed, and with 1,225 Bengali test comments differences of a point or two are noise; setting `SEEDS = [42, 43, 44]` in the notebook repeats every run and reports the mean and standard deviation. The learning curve uses three seeds, which is still too few to separate differences of under a point. Its runs have no validation-based checkpoint selection, so its numbers are not directly comparable with the main table. The only multilingual encoder tested is XLM-R base; a Bangla-specific model such as BanglaBERT is the obvious comparison still missing.
 
 ## Citation
 

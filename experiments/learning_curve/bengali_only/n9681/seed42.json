@@ -1,0 +1,49 @@
+{
+  "condition": "bengali_only",
+  "size": 9681,
+  "seed": 42,
+  "positive_share": 0.5302138208862721,
+  "epochs": 4,
+  "steps": 2424,
+  "batch_size": 16,
+  "learning_rate": 2e-05,
+  "start_model": "FacebookAI/xlm-roberta-base",
+  "test": {
+    "bn": {
+      "accuracy": 0.8824489795918368,
+      "precision": 0.8819068429762689,
+      "recall": 0.8819068429762689,
+      "f1": 0.8819068429762689,
+      "n": 1225,
+      "confusion_matrix": [
+        [
+          499,
+          72
+        ],
+        [
+          72,
+          582
+        ]
+      ]
+    },
+    "en": {
+      "accuracy": 0.7350917431192661,
+      "precision": 0.7819639317127625,
+      "recall": 0.7312768375852488,
+      "f1": 0.7214462029911427,
+      "n": 872,
+      "confusion_matrix": [
+        [
+          224,
+          204
+        ],
+        [
+          27,
+          417
+        ]
+      ]
+    }
+  },
+  "runtime_seconds": 280.2237012386322,
+  "device": "Tesla T4"
+}
