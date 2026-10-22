@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pandas as pd
 import numpy as np
 import joblib
+import sklearn
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -355,7 +356,12 @@ def run_cross_lingual_baseline(
         )
         model.fit(train_df["text"].tolist(), train_df["label"].tolist())
         
-        results[mode] = {"train_languages": train_langs, "train_samples": len(train_df), "test": {}}
+        results[mode] = {
+            "train_languages": train_langs,
+            "train_samples": len(train_df),
+            "sklearn_version": sklearn.__version__,
+            "test": {}
+        }
         for lang in ["en", "bn"]:
             test_df = read(lang, "test")
             metrics = model.evaluate(test_df["text"].tolist(), test_df["label"].tolist())

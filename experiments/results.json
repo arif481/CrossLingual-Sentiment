@@ -1,13 +1,119 @@
 {
-  "transformer": {},
+  "transformer": {
+    "zero_shot": {
+      "model": "FacebookAI/xlm-roberta-base",
+      "seeds": [
+        42
+      ],
+      "train_samples": 63981,
+      "test": {
+        "en": {
+          "n": 872,
+          "accuracy": {
+            "mean": 0.9208715596330275,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.9207956243294653,
+            "std": 0.0,
+            "runs": 1
+          }
+        },
+        "bn": {
+          "n": 1225,
+          "accuracy": {
+            "mean": 0.6881632653061225,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.6778676968658961,
+            "std": 0.0,
+            "runs": 1
+          }
+        }
+      }
+    },
+    "low_resource": {
+      "model": "FacebookAI/xlm-roberta-base",
+      "seeds": [
+        42
+      ],
+      "train_samples": 9681,
+      "test": {
+        "en": {
+          "n": 872,
+          "accuracy": {
+            "mean": 0.7729357798165137,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.7689874603285041,
+            "std": 0.0,
+            "runs": 1
+          }
+        },
+        "bn": {
+          "n": 1225,
+          "accuracy": {
+            "mean": 0.8742857142857143,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.8740674381718851,
+            "std": 0.0,
+            "runs": 1
+          }
+        }
+      }
+    },
+    "combined": {
+      "model": "FacebookAI/xlm-roberta-base",
+      "seeds": [
+        42
+      ],
+      "train_samples": 73662,
+      "test": {
+        "en": {
+          "n": 872,
+          "accuracy": {
+            "mean": 0.9197247706422018,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.9196533404939793,
+            "std": 0.0,
+            "runs": 1
+          }
+        },
+        "bn": {
+          "n": 1225,
+          "accuracy": {
+            "mean": 0.8791836734693877,
+            "std": 0.0,
+            "runs": 1
+          },
+          "f1": {
+            "mean": 0.8788632792037716,
+            "std": 0.0,
+            "runs": 1
+          }
+        }
+      }
+    }
+  },
   "baseline": {
     "zero_shot": {
       "train_samples": 63981,
       "test": {
         "en": {
           "n": 872,
-          "accuracy": 0.8142201834862385,
-          "f1": 0.8140548737146377
+          "accuracy": 0.8165137614678899,
+          "f1": 0.8164355445622714
         },
         "bn": {
           "n": 1225,
@@ -36,13 +142,13 @@
       "test": {
         "en": {
           "n": 872,
-          "accuracy": 0.8165137614678899,
-          "f1": 0.8163746630727763
+          "accuracy": 0.8119266055045872,
+          "f1": 0.8117592548716086
         },
         "bn": {
           "n": 1225,
-          "accuracy": 0.7330612244897959,
-          "f1": 0.7330498393600793
+          "accuracy": 0.7314285714285714,
+          "f1": 0.731417116665034
         }
       }
     }

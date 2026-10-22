@@ -23,21 +23,31 @@ Every model is tested on both the English and the Bengali test set. The best epo
 
 ## Results
 
-Baseline, TF-IDF (unigrams and bigrams, 50,000 features) + logistic regression, run on a CPU with scikit-learn 1.7.2:
+One run of each setup (seed 42) on a free Colab T4. Macro-F1 (%):
 
-| Trained on | English test, macro-F1 | Bengali test, macro-F1 | Bengali test, accuracy |
+| Trained on | Model | English test | Bengali test |
 |---|---|---|---|
-| English | 81.4 | 35.4 | 53.3 |
-| Bengali | 33.0 | 75.6 | 75.6 |
-| English + Bengali | 81.6 | 73.3 | 73.3 |
+| English | TF-IDF + LR | 81.6 | 35.4 |
+| English | XLM-R base | 92.1 | 67.8 |
+| Bengali | TF-IDF + LR | 33.0 | 75.6 |
+| Bengali | XLM-R base | 76.9 | 87.4 |
+| English + Bengali | TF-IDF + LR | 81.2 | 73.1 |
+| English + Bengali | XLM-R base | 92.0 | 87.9 |
 
-The English-only baseline labels 1,216 of the 1,225 Bengali comments positive, so its Bengali accuracy is just the share of positive comments. Adding English data to the Bengali training set lowers the Bengali score by 2.3 points: with a 50,000-feature cap, the combined vocabulary keeps only 3,413 Bengali n-grams, against 35,256 when training on Bengali alone.
+Accuracy is in [experiments/results.md](experiments/results.md); each run's `metrics.json` also has precision, recall and the confusion matrix for both test sets. The baseline is TF-IDF over unigrams and bigrams (50,000 features) with logistic regression.
 
-XLM-RoBERTa results are not in yet. They come from running the Colab notebook below, and every number will be traceable to a `metrics.json` file in `experiments/`.
+What the numbers show:
+
+- Zero-shot transfer works but leaves a large gap. Trained only on English movie-review sentences, XLM-R reaches 67.8 on Bengali comments, 32 points above TF-IDF, which labels 1,216 of the 1,225 comments positive. It is still 19.6 points behind training on Bengali. Its errors mostly go one way: it gets 93% of negative comments right but calls 342 of the 654 positive ones (52%) negative.
+- Bengali data does most of the work. 9,681 Bengali comments give 87.4; adding 63,981 English sentences gives 87.9. The 0.5-point gap is well inside the 95% confidence interval of about ±1.9 points for 1,225 test comments, so on one seed the combined model cannot be called better. English barely changes either (92.1 against 92.0).
+- Transfer also runs the other way: the Bengali-only model scores 76.9 on English without seeing an English example.
+- For TF-IDF, adding English costs 2.5 points on Bengali. Under the 50,000-feature cap the combined vocabulary keeps only 3,413 Bengali n-grams, against 35,256 when training on Bengali alone.
+
+Training took 4.8 minutes (Bengali only), 18.5 minutes (English only) and 22 minutes (combined), with torch 2.11, transformers 5.20.2 and datasets 5.1.0.
 
 ## Running the experiments
 
-The quickest way is the [Colab notebook](notebooks/colab_run.ipynb) on a free T4 GPU. It prepares the data, runs the baseline and the three XLM-RoBERTa runs, prints the results table and downloads `results.zip`.
+The quickest way is the [Colab notebook](notebooks/colab_run.ipynb) on a free T4 GPU, about 50 minutes end to end. It prepares the data, runs the baseline and the three XLM-RoBERTa runs, prints the results table and downloads `results.zip`.
 
 To run it locally (Python 3.10 or newer, and a GPU for the transformer runs):
 
@@ -55,7 +65,7 @@ python -m src.report                                     # writes experiments/re
 
 `python -m src.train --mode combined --max-train-samples 256 --max-eval-samples 128` is a quick check that everything runs.
 
-Hyperparameters are in `configs/config.yaml`: max length 128, batch size 32, learning rate 2e-5 with 10% warmup, weight decay 0.01, up to 4 epochs with early stopping after 2 epochs without a gain in validation macro-F1. The pipeline was tested with transformers 5.20.2, datasets 5.1.0 and torch 2.14.
+Hyperparameters are in `configs/config.yaml`: max length 128, batch size 32, learning rate 2e-5 with 10% warmup, weight decay 0.01, up to 4 epochs with early stopping after 2 epochs without a gain in validation macro-F1. The notebook pins transformers 5.20.2, datasets 5.1.0 and accelerate 1.15.0.
 
 Each run writes `experiments/<mode>/seed<N>/metrics.json` (test accuracy, macro precision, recall and F1, and the confusion matrix for each language, plus run time and library versions) and `training_history.json`. The trained model goes to `models/<mode>-seed<N>/best/`, which is not committed.
 
@@ -79,7 +89,7 @@ Run the tests with `pytest tests/ -v`.
 
 ## Limitations
 
-SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with it. With 1,225 Bengali test comments, the 95% confidence interval on an accuracy near 75% is about ±2.4 points, so small differences between setups need several seeds before they mean anything; the notebook can repeat runs over more seeds.
+SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with it. All results are from a single seed, and with 1,225 Bengali test comments differences of a point or two are noise; setting `SEEDS = [42, 43, 44]` in the notebook repeats every run and reports the mean and standard deviation. The only multilingual encoder tested is XLM-R base; a Bangla-specific model such as BanglaBERT is the obvious comparison still missing.
 
 ## Citation
 

@@ -1,0 +1,64 @@
+{
+  "mode": "combined",
+  "seed": 42,
+  "model": "FacebookAI/xlm-roberta-base",
+  "train_languages": [
+    "en",
+    "bn"
+  ],
+  "train_samples": 73662,
+  "val_samples": 4581,
+  "epochs_trained": 4.0,
+  "best_val_f1": 0.925829501207471,
+  "train_runtime_seconds": 1313.8536,
+  "device": "Tesla T4",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "5.20.2",
+    "datasets": "5.1.0"
+  },
+  "hyperparameters": {
+    "epochs": 4,
+    "batch_size": 32,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.1,
+    "early_stopping_patience": 2
+  },
+  "test": {
+    "en": {
+      "accuracy": 0.9197247706422018,
+      "precision": 0.9200619690997618,
+      "recall": 0.9194872442535994,
+      "f1": 0.9196533404939793,
+      "n": 872,
+      "confusion_matrix": [
+        [
+          388,
+          40
+        ],
+        [
+          30,
+          414
+        ]
+      ]
+    },
+    "bn": {
+      "accuracy": 0.8791836734693877,
+      "precision": 0.8784608240324104,
+      "recall": 0.8797377849901187,
+      "f1": 0.8788632792037716,
+      "n": 1225,
+      "confusion_matrix": [
+        [
+          507,
+          64
+        ],
+        [
+          84,
+          570
+        ]
+      ]
+    }
+  }
+}
