@@ -179,6 +179,8 @@
         <a href="https://github.com/arif481/CrossLingual-Sentiment">Code</a>
         <a href="https://colab.research.google.com/github/arif481/CrossLingual-Sentiment/blob/main/notebooks/colab_run.ipynb">Run in Colab</a>
         <a href="https://github.com/arif481/CrossLingual-Sentiment/tree/main/experiments">Metrics</a>
+        <a href="https://huggingface.co/arif481/crosslingual-sentiment-model">Model</a>
+        <a href="https://huggingface.co/spaces/arif481/crosslingual-demo">Demo</a>
     </p>
 
     <p class="lead">XLM-RoBERTa base fine-tuned only on English movie-review sentences scores 67.8 macro-F1 on Bengali social media comments. Fine-tuned on 100 Bengali comments instead, it scores 73.7, and on all 9,681 it scores 87.4. Starting from the English model, or adding the English data to the Bengali, moves the Bengali score by less than 2 points at every data size tested.</p>
@@ -255,6 +257,15 @@
     <h2>Limitations</h2>
 
     <p>SST-2 is movie reviews and SentNoB is social media comments, so zero-shot transfer measures a change of domain as well as language. Dropping SentNoB's neutral class makes the task easier than the paper's three-way setup, and the scores are not comparable with the paper's. The main results come from a single seed and the learning curve from three, which is too few to separate differences of under a point. XLM-R base is the only encoder tested; a Bangla-specific model such as BanglaBERT is the obvious comparison still missing.</p>
+
+    <h2>Trying the model</h2>
+
+    <p>The combined model is on the Hugging Face Hub as <a href="https://huggingface.co/arif481/crosslingual-sentiment-model">arif481/crosslingual-sentiment-model</a>, and the <a href="https://huggingface.co/spaces/arif481/crosslingual-demo">demo Space</a> runs it in the browser. Its labels are <code>negative</code> and <code>positive</code>.</p>
+
+<pre><code>from transformers import pipeline
+
+classifier = pipeline("text-classification", model="arif481/crosslingual-sentiment-model")
+classifier("The film was a waste of two hours.")</code></pre>
 
     <h2>Running it</h2>
 

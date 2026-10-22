@@ -96,7 +96,16 @@ Each run writes `experiments/<mode>/seed<N>/metrics.json` (test accuracy, macro 
 
 ## Published model
 
-The model at [arif481/crosslingual-sentiment-model](https://huggingface.co/arif481/crosslingual-sentiment-model) and the [demo Space](https://huggingface.co/spaces/arif481/crosslingual-demo) date from an early one-epoch run on a handful of demo sentences, before the data pipeline was fixed. Don't rely on them; they will be replaced with the combined model from the full run.
+The combined model from the results table is on the Hugging Face Hub as [arif481/crosslingual-sentiment-model](https://huggingface.co/arif481/crosslingual-sentiment-model), and the [demo Space](https://huggingface.co/spaces/arif481/crosslingual-demo) runs it. Downloaded from the Hub and run on the test sets, it scores the same as in the table (91.97 English and 87.89 Bengali macro-F1).
+
+```python
+from transformers import pipeline
+
+classifier = pipeline("text-classification", model="arif481/crosslingual-sentiment-model")
+classifier("The film was a waste of two hours.")
+```
+
+`python -m src.push_to_hf --space crosslingual-demo` uploads the model with a card built from its `metrics.json`, and the Gradio app in `app/` to the Space. It reads the token from `HF_TOKEN`.
 
 ## Layout
 
