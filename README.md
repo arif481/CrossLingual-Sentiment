@@ -115,7 +115,7 @@ src/          data loading, preprocessing, baseline, training, learning curve, r
 experiments/  metrics from each run and the results summary
 scripts/      shell wrappers for preprocessing, training and upload
 app/          Streamlit and Gradio demos
-notebooks/    the Colab runner and an analysis notebook
+notebooks/    the Colab runner
 tests/        pytest tests
 ```
 
